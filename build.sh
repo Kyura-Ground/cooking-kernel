@@ -95,18 +95,18 @@ if [ -n "$TG_BOT_TOKEN" ] && [ -n "$TG_CHAT_ID" ]; then
     echo "--- Uploading to Telegram ---"
     
     # Custom Message
-    TG_MESSAGE="✅ <b>Build Finished Successfully</b>%0A"
-    TG_MESSAGE+="<b>Kernel:</b> Kyura-Kernel-X00TD%0A"
-    TG_MESSAGE+="<b>Version:</b> ${ZIP_NAME}%0A"
-    TG_MESSAGE+="<b>Branch:</b> ${KERNEL_BRANCH}%0A"
-    TG_MESSAGE+="<b>Compiler:</b> LLVM 22.1.2 (PurrrsLitterbox)%0A"
-    TG_MESSAGE+="<b>Time:</b> ${BUILD_TIME}%0A"
+    TG_MESSAGE="✅ <b>Build Finished Successfully</b>
+<b>Kernel:</b> Kyura-Kernel-X00TD
+<b>Version:</b> ${ZIP_NAME}
+<b>Branch:</b> ${KERNEL_BRANCH}
+<b>Compiler:</b> LLVM 22.1.2 (PurrrsLitterbox)
+<b>Time:</b> ${BUILD_TIME}"
 
     curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" \
         -F chat_id="${TG_CHAT_ID}" \
         -F document=@"out-zip/${ZIP_NAME}" \
         -F parse_mode="HTML" \
-        -F caption="$(echo -e ${TG_MESSAGE})"
+        -F caption="${TG_MESSAGE}"
 else
     echo "Telegram secret variables not set, skipping upload."
 fi
