@@ -6,25 +6,20 @@ set -ex
 # Variables
 KERNEL_REPO="https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19"
 KERNEL_BRANCH="lineage-23.2"
-CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/9b144befdfd93b90e02c663504fb9f4b95f9faf8/clang-r596125.tar.gz"
+CLANG_URL="https://github.com/PurrrsLitterbox/LLVM-stable/releases/download/llvmorg-22.1.2/clang.tar.zst"
 
 WORKDIR=$(pwd)
 
 echo "--- Cloning Kernel ---"
 git clone --depth=1 -b ${KERNEL_BRANCH} ${KERNEL_REPO} kernel-src
 
-echo "--- Downloading Clang Toolchain (Sparse Checkout) ---"
+echo "--- Downloading and Extracting Clang Toolchain ---"
 mkdir -p clang-toolchain
-cd clang-toolchain
-git init
-git remote add origin https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86
-git config core.sparseCheckout true
-echo "clang-r596125/*" >> .git/info/sparse-checkout
-git fetch --depth=1 origin 9b144befdfd93b90e02c663504fb9f4b95f9faf8
-git checkout 9b144befdfd93b90e02c663504fb9f4b95f9faf8
-cd ..
+wget -qO clang.tar.zst "${CLANG_URL}"
+tar -I zstd -xf clang.tar.zst -C clang-toolchain
+rm clang.tar.zst
 
-export PATH="${WORKDIR}/clang-toolchain/clang-r596125/bin:${PATH}"
+export PATH="${WORKDIR}/clang-toolchain/bin:${PATH}"
 
 cd kernel-src
 
@@ -41,21 +36,21 @@ make O=out clean
 make O=out mrproper
 
 echo "--- Make Defconfig ---"
-make O=out $DEFCONFIG
+make O=out CC=clang LLVM=1 LLVM_IAS=1 $DEFCONFIG
 
 echo "--- Compiling Kernel ---"
 make -j$(nproc --all) \
     O=out \
-    ARCH=arm64 \
     CC=clang \
     LD=ld.lld \
     AR=llvm-ar \
     NM=llvm-nm \
     OBJCOPY=llvm-objcopy \
     OBJDUMP=llvm-objdump \
+    READELF=llvm-readelf \
     STRIP=llvm-strip \
-    CROSS_COMPILE=aarch64-linux-gnu- \
-    CROSS_COMPILE_ARM32=arm-linux-gnueabi-
+    LLVM=1 \
+    LLVM_IAS=1
 
 echo "--- Setting up AnyKernel3 ---"
 ANYKERNEL_REPO="https://github.com/Kyura-Ground/AnyKernel3"
@@ -77,7 +72,7 @@ if [ -n "$TG_BOT_TOKEN" ] && [ -n "$TG_CHAT_ID" ]; then
     TG_MESSAGE="✅ <b>Build Finished Successfully</b>%0A"
     TG_MESSAGE+="<b>Kernel:</b> Kyura-Kernel-X00TD%0A"
     TG_MESSAGE+="<b>Branch:</b> ${KERNEL_BRANCH}%0A"
-    TG_MESSAGE+="<b>Compiler:</b> AOSP Clang%0A"
+    TG_MESSAGE+="<b>Compiler:</b> LLVM 22.1.2 (PurrrsLitterbox)%0A"
 
     curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" \
         -F chat_id="${TG_CHAT_ID}" \
