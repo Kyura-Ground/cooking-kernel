@@ -3,7 +3,7 @@ version: 2.1
 executors:
   kernel-builder:
     docker:
-      - image: ubuntu:22.04
+      - image: cimg/ubuntu:22.04
     resource_class: large
 
 jobs:
