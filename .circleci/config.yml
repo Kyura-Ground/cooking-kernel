@@ -3,13 +3,17 @@ version: 2.1
 executors:
   kernel-builder:
     docker:
-      - image: cimg/ubuntu:22.04
+      - image: ubuntu:22.04
     resource_class: large
 
 jobs:
   build:
     executor: kernel-builder
     steps:
+      - run:
+          name: Pre-install git and ssh for checkout
+          command: apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y git ssh
+
       - checkout
 
       - run:
