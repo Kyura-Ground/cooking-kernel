@@ -1,7 +1,9 @@
 #!/bin/bash
 # Script to build kernel in CircleCI
 
-set -ex
+set -e
+
+BUILD_START=$(date +"%s")
 
 # Variables
 KERNEL_REPO="https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19"
@@ -32,8 +34,16 @@ export KBUILD_BUILD_HOST="circleci"
 DEFCONFIG="vendor/asus/X00TD_defconfig"
 
 echo "--- Clean Build Directory ---"
-make O=out clean
-make O=out mrproper
+rm -rf out/
+
+# Build ZIP filename with version + timestamp
+KERNEL_VER="$(sed -n 's/^VERSION[[:space:]]*=[[:space:]]*//p' Makefile).$(sed -n 's/^PATCHLEVEL[[:space:]]*=[[:space:]]*//p' Makefile).$(sed -n 's/^SUBLEVEL[[:space:]]*=[[:space:]]*//p' Makefile)"
+LOCALVER="$(cat localversion 2>/dev/null)"
+ZIP_NAME="${KERNEL_VER}${LOCALVER}-$(date +'%Y%m%d-%H%M').zip"
+
+echo "======================================"
+echo "🚀 Starting X00TD Kernel Build..."
+echo "======================================"
 
 echo "--- Make Defconfig ---"
 make O=out CC=clang LLVM=1 LLVM_IAS=1 $DEFCONFIG
@@ -52,33 +62,55 @@ make -j$(nproc --all) \
     LLVM=1 \
     LLVM_IAS=1
 
-echo "--- Setting up AnyKernel3 ---"
-ANYKERNEL_REPO="https://github.com/Kyura-Ground/AnyKernel3"
-ANYKERNEL_BRANCH="4.19"
+BUILD_END=$(date +"%s")
+BUILD_TIME="$(($(($BUILD_END - $BUILD_START)) / 60))m $(($((BUILD_END - BUILD_START)) % 60))s"
 
-git clone --depth=1 -b ${ANYKERNEL_BRANCH} ${ANYKERNEL_REPO} anykernel
-cp out/arch/arm64/boot/Image.gz-dtb anykernel/
-cd anykernel
-zip -r9 ../kernel-flashable.zip *
-cd ..
-
-echo "Build and Packaging Completed!"
+if [ -f "out/arch/arm64/boot/Image.gz-dtb" ]; then
+    echo "✅ Build successful in $BUILD_TIME! Packing ZIP..."
+    
+    echo "--- Setting up AnyKernel3 ---"
+    ANYKERNEL_REPO="https://github.com/Kyura-Ground/AnyKernel3"
+    ANYKERNEL_BRANCH="4.19"
+    
+    git clone --depth=1 -b ${ANYKERNEL_BRANCH} ${ANYKERNEL_REPO} anykernel
+    cp out/arch/arm64/boot/Image.gz-dtb anykernel/
+    
+    cd anykernel
+    rm -f *.zip
+    zip -r9 "../$ZIP_NAME" * -x .git README.md *placeholder
+    cd ..
+    
+    # Store it in a predictable folder for CircleCI Artifacts
+    mkdir -p out-zip
+    mv "$ZIP_NAME" out-zip/
+    
+    echo "✅ ZIP created: $ZIP_NAME"
+    echo "======================================"
+else
+    echo "❌ Build failed in $BUILD_TIME! Image.gz-dtb not found!"
+    exit 1
+fi
 
 if [ -n "$TG_BOT_TOKEN" ] && [ -n "$TG_CHAT_ID" ]; then
     echo "--- Uploading to Telegram ---"
-    ZIP_NAME="kernel-flashable.zip"
     
     # Custom Message
     TG_MESSAGE="✅ <b>Build Finished Successfully</b>%0A"
     TG_MESSAGE+="<b>Kernel:</b> Kyura-Kernel-X00TD%0A"
+    TG_MESSAGE+="<b>Version:</b> ${ZIP_NAME}%0A"
     TG_MESSAGE+="<b>Branch:</b> ${KERNEL_BRANCH}%0A"
     TG_MESSAGE+="<b>Compiler:</b> LLVM 22.1.2 (PurrrsLitterbox)%0A"
+    TG_MESSAGE+="<b>Time:</b> ${BUILD_TIME}%0A"
 
     curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" \
         -F chat_id="${TG_CHAT_ID}" \
-        -F document=@"kernel-flashable.zip" \
+        -F document=@"out-zip/${ZIP_NAME}" \
         -F parse_mode="HTML" \
         -F caption="$(echo -e ${TG_MESSAGE})"
 else
     echo "Telegram secret variables not set, skipping upload."
 fi
+
+echo "🧹 Cleanup..."
+rm -rf out/
+echo "✅ Done!"

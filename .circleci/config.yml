@@ -35,8 +35,8 @@ jobs:
             ./build.sh
 
       - store_artifacts:
-          path: kernel-src/kernel-flashable.zip
-          destination: kernel-flashable.zip
+          path: kernel-src/out-zip
+          destination: KERNEL-BUILDS
 
 workflows:
   kernel-workflow:
