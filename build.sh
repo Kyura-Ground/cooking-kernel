@@ -13,13 +13,18 @@ WORKDIR=$(pwd)
 echo "--- Cloning Kernel ---"
 git clone --depth=1 -b ${KERNEL_BRANCH} ${KERNEL_REPO} kernel-src
 
-echo "--- Downloading and Extracting Clang Toolchain ---"
+echo "--- Downloading Clang Toolchain (Sparse Checkout) ---"
 mkdir -p clang-toolchain
-wget -qO clang.tar.gz "${CLANG_URL}"
-tar -xzf clang.tar.gz -C clang-toolchain
-rm clang.tar.gz
+cd clang-toolchain
+git init
+git remote add origin https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86
+git config core.sparseCheckout true
+echo "clang-r596125/*" >> .git/info/sparse-checkout
+git fetch --depth=1 origin 9b144befdfd93b90e02c663504fb9f4b95f9faf8
+git checkout 9b144befdfd93b90e02c663504fb9f4b95f9faf8
+cd ..
 
-export PATH="${WORKDIR}/clang-toolchain/bin:${PATH}"
+export PATH="${WORKDIR}/clang-toolchain/clang-r596125/bin:${PATH}"
 
 cd kernel-src
 
