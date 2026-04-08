@@ -1,40 +1,25 @@
-# X00TD / SDM660 Kernel Builder
+# X00TD Kernel Builder
 
 [![CircleCI](https://circleci.com/gh/Kyura-Ground/cooking-kernel.svg?style=shield)](https://app.circleci.com/pipelines/github/Kyura-Ground/cooking-kernel)
 
-Repository ini berisi script dan konfigurasi CircleCI terotomatisasi yang diperuntukkan untuk melakukan kompilasi Kernel Android dari awal (khususnya untuk device ASUS Max Pro M1 / X00TD dengan SoC Snapdragon 660). 
+An automated CI/CD pipeline built with CircleCI to compile the Android Linux Kernel for ASUS Max Pro M1 (X00TD - Snapdragon 660).
 
-## Repositori Utama
-Skrip ini akan mengambil dependensi berikut pada saat proses build berjalan:
+## Infrastructure Overview
+- **Target Source**: [android_kernel_asus_sdm660-4.19](https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19)
+- **Branch**: `lineage-23.2`
+- **Compiler**: [LLVM-stable 22.1.2](https://github.com/PurrrsLitterbox/LLVM-stable/releases) by PurrrsLitterbox
+- **Packager**: [AnyKernel3](https://github.com/Kyura-Ground/AnyKernel3)
 
-- **Kernel Source:** [android_kernel_asus_sdm660-4.19](https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19) (Branch: `lineage-23.2`)
-- **AnyKernel3:** [AnyKernel3](https://github.com/Kyura-Ground/AnyKernel3) (Branch: `4.19`)
-- **Compiler:** [AOSP Clang r596125](https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/9b144befdfd93b90e02c663504fb9f4b95f9faf8/clang-r596125.tar.gz)
+## Build Lifecycle
+1. Pushing commits to this repository automatically triggers a build via **CircleCI**.
+2. The script downloads the kernel source, pulls the LLVM toolchain, and compiles the kernel using Clang.
+3. The compiled `Image.gz-dtb` is packaged into a TWRP-flashable zip using AnyKernel3.
+4. The final ZIP is cached as a CircleCI **Artifact** and sent to Telegram *(if variables are set)*.
 
-## Cara Kerja
-
-1. **CircleCI Trigger:** Setiap ada *push* atau perubahan pada repository ini, CircleCI akan langsung menjalankan perintah kompilasi menggunakan docker `ubuntu:22.04`.
-2. **Kompilasi (build.sh):** Skrip akan mengunduh source code kernel, AOSP Clang, dan memulai proses compile menggunakan argumen `make` yang sesuai standar Android ARM64.
-3. **Packaging AnyKernel3:** Setelah *Image* berhasil jadi (yakni `Image.gz-dtb`), skrip akan mem-package kernel ke dalam sebuah *flashable* zip format TWRP/OrangeFox yang dirangkai secara otomatis oleh AnyKernel3.
-4. **Artifacts:** *Flashable Zip* yang sudah matang dapat diunduh langsung di tab **Artifacts** yang ada di dashboard *Steps* CircleCI.
-
-## Struktur Direktori
-
-- `.circleci/config.yml` : Konfigurasi docker, environments, dan job step dari mesin CircleCI.
-- `build.sh` : Skrip bash yang mengeksekusi proses fetching (*download*), kompilasi (*make*), dan *packaging* (AnyKernel).
-
-## Cara Menggunakan (Fork & Run)
-
-Jika Anda ingin menjalankan build Anda sendiri dan mengaktifkan notifikasi Telegram:
-1. *Fork* repository ini ke akun Github Anda.
-2. Sign in di [CircleCI](https://circleci.com) menggunakan Github Anda.
-3. Klik **Projects** lalu *Set Up Project* untuk repository ini. Ikuti opsi default menggunakan config `.circleci/config.yml` yang sudah ada (*Fastest Options*).
-4. **(Opsional) Setup Telegram Bot:** Di project CircleCI Anda, buka **Project Settings** > **Environment Variables** lalu tambahkan dua *secret variable* berikut:
-   - `TG_BOT_TOKEN` : Berisi Token Bot Telegram Anda (dari @BotFather).
-   - `TG_CHAT_ID` : Berisi Chat ID tujuan pengiriman (bisa grup, channel, atau akun pribadi Anda).
-5. Build akan langsung berjalan dan file zip bisa di-download setelah sukses (serta otomatis dikirimkan ke Telegram apabila Variabel Environment diaktifkan).
-6. Anda juga bebas mengubah environment / target repository di dalam file `build.sh`.
-
----
-
-*Automated Compiler setup built with CircleCI.*
+## How to use
+1. **Fork** this repository to your GitHub account.
+2. Go to **CircleCI** and connect the repository (using the *Fastest* option via `.circleci/config.yml`).
+3. *(Optional)* To enable Telegram Notification Mirror, go to your **Project Settings > Environment Variables** and add:
+   - `TG_BOT_TOKEN`
+   - `TG_CHAT_ID`
+4. Committing any changes to this repository will start the build automatically.
