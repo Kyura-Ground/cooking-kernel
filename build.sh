@@ -76,7 +76,7 @@ if [ -n "$TG_BOT_TOKEN" ] && [ -n "$TG_CHAT_ID" ]; then
 
     curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" \
         -F chat_id="${TG_CHAT_ID}" \
-        -F document=@"${WORKDIR}/kernel-flashable.zip" \
+        -F document=@"kernel-flashable.zip" \
         -F parse_mode="HTML" \
         -F caption="$(echo -e ${TG_MESSAGE})"
 else
