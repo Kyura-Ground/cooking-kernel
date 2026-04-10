@@ -17,8 +17,8 @@ ANYKERNEL_BRANCH="4.19"
 # ──────────────────────────────────────────
 export ARCH=arm64
 export SUBARCH=arm64
-export KBUILD_BUILD_USER="circleci"
-export KBUILD_BUILD_HOST="circleci"
+export KBUILD_BUILD_USER="Kyura"
+export KBUILD_BUILD_HOST="Labs"
 
 WORKDIR=$(pwd)
 JOBS=$(nproc --all)
