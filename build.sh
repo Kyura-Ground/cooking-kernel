@@ -114,8 +114,12 @@ if [ -n "${TG_BOT_TOKEN}" ] && [ -n "${TG_CHAT_ID}" ]; then
         -F caption="${TG_MSG}"; then
         
         echo "❌ Telegram upload failed! Uploading to Pixeldrain (Mirror) instead..."
-        curl -sS -T "out-zip/${ZIP_NAME}" -u :8490fc51-f593-4c87-8e35-3379cf5a94a3 https://pixeldrain.com/api/file/
-        echo ""
+        if [ -n "${PIXELDRAIN_API_KEY}" ]; then
+            curl -sS -T "out-zip/${ZIP_NAME}" -u :"${PIXELDRAIN_API_KEY}" https://pixeldrain.com/api/file/
+            echo ""
+        else
+            echo "ℹ️  Pixeldrain API key not set, skipping fallback mirror upload."
+        fi
     fi
 else
     echo "ℹ️  Telegram vars not set, skipping upload."
