@@ -7,7 +7,7 @@ set -eo pipefail
 # ──────────────────────────────────────────
 KERNEL_REPO="https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19"
 KERNEL_BRANCH="lineage-23.2"
-CLANG_URL="https://github.com/PurrrsLitterbox/LLVM-stable/releases/download/llvmorg-22.1.2/clang.tar.zst"
+CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz"
 DEFCONFIG="vendor/asus/X00TD_defconfig"
 ANYKERNEL_REPO="https://github.com/Kyura-Ground/AnyKernel3"
 ANYKERNEL_BRANCH="4.19"
@@ -35,7 +35,7 @@ git clone --depth=1 -b "${KERNEL_BRANCH}" "${KERNEL_REPO}" kernel-src
 # ──────────────────────────────────────────
 echo "--- Downloading Clang Toolchain ---"
 mkdir -p clang-toolchain
-wget -qO- "${CLANG_URL}" | zstd -d | tar -xf - -C clang-toolchain
+wget -qO- "${CLANG_URL}" | tar -xzf - -C clang-toolchain
 export PATH="${WORKDIR}/clang-toolchain/bin:${PATH}"
 
 # ──────────────────────────────────────────
@@ -101,7 +101,7 @@ if [ -n "${TG_BOT_TOKEN}" ] && [ -n "${TG_CHAT_ID}" ]; then
 <b>Kernel:</b> Kyura-Kernel-X00TD
 <b>Version:</b> ${ZIP_NAME}
 <b>Branch:</b> ${KERNEL_BRANCH}
-<b>Compiler:</b> LLVM 22.1.2
+<b>Compiler:</b> Clang 20.0.0 (r547379)
 <b>Time:</b> ${BUILD_TIME}"
 
     curl -sf -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" \
