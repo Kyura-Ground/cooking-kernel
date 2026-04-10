@@ -107,11 +107,16 @@ if [ -n "${TG_BOT_TOKEN}" ] && [ -n "${TG_CHAT_ID}" ]; then
 <b>Compiler:</b> Clang 20.0.0 (r547379)
 <b>Time:</b> ${BUILD_TIME}"
 
-    curl -sf -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" \
+    if ! curl -sS -m 300 -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" \
         -F chat_id="${TG_CHAT_ID}" \
         -F document=@"out-zip/${ZIP_NAME}" \
         -F parse_mode="HTML" \
-        -F caption="${TG_MSG}"
+        -F caption="${TG_MSG}"; then
+        
+        echo "❌ Telegram upload failed! Uploading to Pixeldrain (Mirror) instead..."
+        curl -sS -T "out-zip/${ZIP_NAME}" -u :8490fc51-f593-4c87-8e35-3379cf5a94a3 https://pixeldrain.com/api/file/
+        echo ""
+    fi
 else
     echo "ℹ️  Telegram vars not set, skipping upload."
 fi
