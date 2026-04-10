@@ -84,6 +84,12 @@ cd ..
 mkdir -p out-zip
 mv "${ZIP_NAME}" out-zip/
 
+echo "--- Signing ZIP with ZipSigner ---"
+wget -qO zipsigner-3.0-dexed.jar "https://github.com/Magisk-Modules-Repo/zipsigner/raw/master/bin/zipsigner-3.0-dexed.jar"
+java -jar zipsigner-3.0-dexed.jar "out-zip/${ZIP_NAME}" "out-zip/${ZIP_NAME%.zip}-signed.zip"
+rm "out-zip/${ZIP_NAME}" zipsigner-3.0-dexed.jar
+ZIP_NAME="${ZIP_NAME%.zip}-signed.zip"
+
 echo "✅ ZIP: ${ZIP_NAME}"
 
 # ──────────────────────────────────────────

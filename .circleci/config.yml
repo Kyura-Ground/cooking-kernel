@@ -16,7 +16,7 @@ jobs:
             apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
             git ssh bc bison build-essential flex libssl-dev libelf-dev \
             python3 gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi \
-            wget lld zstd cpio zip ca-certificates
+            wget lld zstd cpio zip ca-certificates default-jre-headless
 
       - checkout
 
