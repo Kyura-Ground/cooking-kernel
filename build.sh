@@ -43,6 +43,9 @@ export PATH="${WORKDIR}/clang-toolchain/bin:${PATH}"
 # ──────────────────────────────────────────
 cd kernel-src
 
+# Replace localversion with K-Line
+sed -i 's/.*/-K-Line/' localversion
+
 echo "======================================"
 echo "🚀 Starting X00TD Kernel Build..."
 echo "======================================"
@@ -98,7 +101,7 @@ echo "✅ ZIP: ${ZIP_NAME}"
 if [ -n "${TG_BOT_TOKEN}" ] && [ -n "${TG_CHAT_ID}" ]; then
     echo "--- Uploading to Telegram ---"
     TG_MSG="✅ <b>Build Finished</b>
-<b>Kernel:</b> Kyura-Kernel-X00TD
+<b>Kernel:</b> K-Line
 <b>Version:</b> ${ZIP_NAME}
 <b>Branch:</b> ${KERNEL_BRANCH}
 <b>Compiler:</b> Clang 20.0.0 (r547379)
