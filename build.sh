@@ -6,7 +6,7 @@ set -eo pipefail
 # Configuration (edit these for your device)
 # ──────────────────────────────────────────
 KERNEL_REPO="https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19"
-KERNEL_BRANCH="lineage-23.2"
+KERNEL_BRANCH="cam-legacy/lineage-23.2"
 CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz"
 DEFCONFIG="vendor/asus/X00TD_defconfig"
 ANYKERNEL_REPO="https://github.com/Kyura-Ground/AnyKernel3"
