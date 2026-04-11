@@ -7,7 +7,7 @@ set -eo pipefail
 # ──────────────────────────────────────────
 KERNEL_REPO="https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19"
 KERNEL_BRANCH="cam-legacy/lineage-23.2"
-CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz"
+CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/9b144befdfd93b90e02c663504fb9f4b95f9faf8/clang-r596125.tar.gz"
 DEFCONFIG="vendor/asus/X00TD_defconfig"
 ANYKERNEL_REPO="https://github.com/Kyura-Ground/AnyKernel3"
 ANYKERNEL_BRANCH="4.19"
@@ -104,7 +104,7 @@ if [ -n "${TG_BOT_TOKEN}" ] && [ -n "${TG_CHAT_ID}" ]; then
 <b>Kernel:</b> K-Line
 <b>Version:</b> ${ZIP_NAME}
 <b>Branch:</b> ${KERNEL_BRANCH}
-<b>Compiler:</b> Clang 20.0.0 (r547379)
+<b>Compiler:</b> Clang 22.0.2 (r596125)
 <b>Time:</b> ${BUILD_TIME}"
 
     if ! curl -sS -m 300 -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" \
