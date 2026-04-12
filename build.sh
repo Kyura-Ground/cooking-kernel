@@ -33,9 +33,15 @@ git clone --depth=1 -b "${KERNEL_BRANCH}" "${KERNEL_REPO}" kernel-src
 # ──────────────────────────────────────────
 # Fetch & extract Clang toolchain
 # ──────────────────────────────────────────
-echo "--- Downloading Clang Toolchain ---"
 mkdir -p clang-toolchain
-wget -qO- "${CLANG_URL}" | tar -xzf - -C clang-toolchain
+
+if [ -x "clang-toolchain/bin/clang" ]; then
+    echo "--- Using cached Clang toolchain ---"
+else
+    echo "--- Downloading Clang Toolchain ---"
+    wget -qO- "${CLANG_URL}" | tar -xzf - -C clang-toolchain
+fi
+
 export PATH="${WORKDIR}/clang-toolchain/bin:${PATH}"
 
 # ──────────────────────────────────────────

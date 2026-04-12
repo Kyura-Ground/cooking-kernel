@@ -20,11 +20,29 @@ jobs:
 
       - checkout
 
+      - restore_cache:
+          keys:
+            - clang-toolchain-v1-{{ checksum "build.sh" }}
+
+      - run:
+          name: Show cache status
+          command: |
+            if [ -x clang-toolchain/bin/clang ]; then
+              echo "Clang cache restored"
+            else
+              echo "No Clang cache found, will download in build.sh"
+            fi
+
       - run:
           name: Build Kernel
           command: |
             chmod +x build.sh
             ./build.sh
+
+      - save_cache:
+          key: clang-toolchain-v1-{{ checksum "build.sh" }}
+          paths:
+            - clang-toolchain
 
       - store_artifacts:
           path: kernel-src/out-zip
