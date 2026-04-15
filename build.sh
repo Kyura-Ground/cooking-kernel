@@ -11,6 +11,7 @@ CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-
 DEFCONFIG="vendor/asus/X00TD_defconfig"
 ANYKERNEL_REPO="https://github.com/Kyura-Ground/AnyKernel3"
 ANYKERNEL_BRANCH="4.19"
+BUILD_KSU=1 # Set to 1 to enable KernelSU, 0 to disable
 
 # ──────────────────────────────────────────
 # Environment
@@ -49,8 +50,14 @@ export PATH="${WORKDIR}/clang-toolchain/bin:${PATH}"
 # ──────────────────────────────────────────
 cd kernel-src
 
-# Replace localversion with K-Line
-sed -i 's/.*/-K-Line/' localversion
+if [ "${BUILD_KSU}" -eq 1 ]; then
+    echo "--- Setting up KernelSU ---"
+    curl -LSs "https://raw.githubusercontent.com/backslashxx/KernelSU/master/kernel/setup.sh" | bash -s master
+    sed -i 's/.*/-K-Line-KSU/' localversion
+else
+    echo "--- KernelSU disabled ---"
+    sed -i 's/.*/-K-Line/' localversion
+fi
 
 echo "======================================"
 echo "🚀 Starting X00TD Kernel Build..."
