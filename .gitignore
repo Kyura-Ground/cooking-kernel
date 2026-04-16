@@ -1,0 +1,19 @@
+# Build artifacts
+kernel-src/
+clang-toolchain/
+anykernel/
+out-zip/
+out/
+*.zip
+*.jar
+
+# Logs and temp files
+*.log
+*.tmp
+.DS_Store
+
+# Local configuration
+config.sh
+
+# Java/ZipSigner
+zipsigner-3.0-dexed.jar
