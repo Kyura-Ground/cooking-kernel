@@ -105,6 +105,7 @@ success "Build successful in ${BUILD_TIME}! Packaging..."
 
 KERNEL_VER="$(make -s kernelversion)"
 LOCALVER="$(cat localversion 2>/dev/null || true)"
+COMMIT_MSG="$(git log -1 --pretty=format:"%s")"
 ZIP_NAME="${KERNEL_VER}${LOCALVER}-$(date +'%Y%m%d-%H%M').zip"
 
 if [ ! -d "anykernel" ]; then
@@ -137,7 +138,8 @@ if [ -n "${TG_BOT_TOKEN}" ] && [ -n "${TG_CHAT_ID}" ]; then
 <b>Version:</b> ${ZIP_NAME}
 <b>Branch:</b> ${KERNEL_BRANCH}
 <b>Compiler:</b> $(clang --version | head -n 1 | perl -pe 's/ \(.*//')
-<b>Time:</b> ${BUILD_TIME}"
+<b>Time:</b> ${BUILD_TIME}
+<b>Last Commit:</b> ${COMMIT_MSG}"
 
     if ! curl -sS -m 300 -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" \
         -F chat_id="${TG_CHAT_ID}" \
