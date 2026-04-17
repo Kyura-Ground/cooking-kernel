@@ -71,10 +71,10 @@ cd kernel-src
 if [ "${BUILD_KSU}" -eq 1 ]; then
     info "Setting up KernelSU"
     curl -LSs "https://raw.githubusercontent.com/backslashxx/KernelSU/master/kernel/setup.sh" | bash -s master
-    sed -i 's/.*/-K-Line-KSU/' localversion
+    sed -i 's/.*/-Centauri-KSU/' localversion
 else
     info "KernelSU disabled"
-    sed -i 's/.*/-K-Line/' localversion
+    sed -i 's/.*/-Centauri/' localversion
 fi
 
 echo "======================================"
@@ -134,7 +134,7 @@ success "ZIP: ${ZIP_NAME}"
 if [ -n "${TG_BOT_TOKEN}" ] && [ -n "${TG_CHAT_ID}" ]; then
     info "Uploading to Telegram"
     TG_MSG="✅ <b>Build Finished</b>
-<b>Kernel:</b> K-Line
+<b>Kernel:</b> Centauri
 <b>Version:</b> ${ZIP_NAME}
 <b>Branch:</b> ${KERNEL_BRANCH}
 <b>Compiler:</b> $(clang --version | head -n 1 | perl -pe 's/ \(.*//')
