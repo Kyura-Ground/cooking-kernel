@@ -20,7 +20,7 @@ fi
 
 # Defaults (fallback)
 KERNEL_REPO="${KERNEL_REPO:-https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19}"
-KERNEL_BRANCH="${KERNEL_BRANCH:-XXKSU}"
+KERNEL_BRANCH="${KERNEL_BRANCH:-susfs}"
 CLANG_URL="${CLANG_URL:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/9b144befdfd93b90e02c663504fb9f4b95f9faf8/clang-r596125.tar.gz}"
 DEFCONFIG="${DEFCONFIG:-vendor/asus/X00TD_defconfig}"
 ANYKERNEL_REPO="${ANYKERNEL_REPO:-https://github.com/Kyura-Ground/AnyKernel3}"
@@ -70,7 +70,7 @@ cd kernel-src
 
 if [ "${BUILD_KSU}" -eq 1 ]; then
     info "Setting up KernelSU"
-    curl -LSs "https://raw.githubusercontent.com/backslashxx/KernelSU/master/kernel/setup.sh" | bash -s master
+    curl -LSs "https://raw.githubusercontent.com/Sorayukii/KernelSU-Next/stable/kernel/setup.sh" | bash -s hookless
     sed -i 's/.*/-Centauri-KSU/' localversion
 else
     info "KernelSU disabled"
@@ -106,6 +106,7 @@ success "Build successful in ${BUILD_TIME}! Packaging..."
 KERNEL_VER="$(make -s kernelversion)"
 LOCALVER="$(cat localversion 2>/dev/null || true)"
 COMMIT_MSG="$(git log -1 --pretty=format:"%s")"
+COMMIT_HASH="$(git rev-parse --short HEAD)"
 ZIP_NAME="${KERNEL_VER}${LOCALVER}-$(date +'%Y%m%d-%H%M').zip"
 
 if [ ! -d "anykernel" ]; then
@@ -139,7 +140,7 @@ if [ -n "${TG_BOT_TOKEN}" ] && [ -n "${TG_CHAT_ID}" ]; then
 <b>Branch:</b> ${KERNEL_BRANCH}
 <b>Compiler:</b> $(clang --version | head -n 1 | perl -pe 's/ \(.*//')
 <b>Time:</b> ${BUILD_TIME}
-<b>Last Commit:</b> ${COMMIT_MSG}"
+<b>Last Commit:</b> <a href=\"${KERNEL_REPO}/commit/${COMMIT_HASH}\">${COMMIT_HASH}</a>: ${COMMIT_MSG}"
 
     if ! curl -sS -m 300 -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" \
         -F chat_id="${TG_CHAT_ID}" \
