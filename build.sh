@@ -15,7 +15,6 @@ error() { echo -e "\e[1;31m[$(date +%T)] ❌ $1\e[0m"; exit 1; }
 # Defaults (fallback)
 KERNEL_REPO="${KERNEL_REPO:-https://github.com/SonicBSV/android_kernel_asus_sdm660-4.19}"
 KERNEL_BRANCH="${KERNEL_BRANCH:-lineage-23.2}"
-CLANG_URL="${CLANG_URL:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/9b144befdfd93b90e02c663504fb9f4b95f9faf8/clang-r596125.tar.gz}"
 DEFCONFIG="${DEFCONFIG:-vendor/asus/X00TD_defconfig}"
 ANYKERNEL_REPO="${ANYKERNEL_REPO:-https://github.com/Kyura-Ground/AnyKernel3}"
 ANYKERNEL_BRANCH="${ANYKERNEL_BRANCH:-4.19}"
@@ -23,17 +22,24 @@ BUILD_KSU="${BUILD_KSU:-0}" # Set to 1 to enable KernelSU, 0 to disable
 KBUILD_BUILD_USER="${KBUILD_BUILD_USER:-Builder}"
 KBUILD_BUILD_HOST="${KBUILD_BUILD_HOST:-CI}"
 
-# Build Options
-USE_CCACHE="${USE_CCACHE:-1}"
-USE_LLVM="${USE_LLVM:-1}"
-USE_LLVM_IAS="${USE_LLVM_IAS:-1}"
-LTO="${LTO:-0}" # 0: Default, 1: Thin, 2: Full (if supported)
-
 # Load custom config if exists (overrides defaults)
 if [ -f "config.sh" ]; then
     info "Using custom config from config.sh"
     # shellcheck source=/dev/null
     source config.sh
+fi
+
+# Toolchain (Clang) selection logic
+CLANG_VERSION="${CLANG_VERSION:-1}"
+CLANG_URL_1="${CLANG_URL_1:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/9b144befdfd93b90e02c663504fb9f4b95f9faf8/clang-r596125.tar.gz}"
+CLANG_URL_2="${CLANG_URL_2:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/ebcc6c3bef363bc539ea39f45b6abae1dce6ff1a/clang-r574158.tar.gz}"
+
+if [ "${CLANG_VERSION}" -eq 2 ]; then
+    CLANG_URL="${CLANG_URL_2}"
+    info "Using Clang 2 (r574158)"
+else
+    CLANG_URL="${CLANG_URL_1}"
+    info "Using Clang 1 (r596125)"
 fi
 
 # Export build environment
