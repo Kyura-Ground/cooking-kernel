@@ -42,6 +42,12 @@ else
     info "Using Clang 1 (r596125)"
 fi
 
+# Build Options
+USE_CCACHE="${USE_CCACHE:-1}"
+USE_LLVM="${USE_LLVM:-1}"
+USE_LLVM_IAS="${USE_LLVM_IAS:-1}"
+LTO="${LTO:-0}" # 0: Default, 1: Thin, 2: Full (if supported)
+
 # Export build environment
 export ARCH=arm64
 export SUBARCH=arm64
