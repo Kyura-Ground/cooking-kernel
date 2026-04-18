@@ -5,8 +5,21 @@ executors:
     docker:
       - image: ubuntu:22.04
     resource_class: large
+    environment:
+      USE_CCACHE: 1
+      CCACHE_DIR: /home/circleci/project/.ccache
 
 jobs:
+  lint:
+    docker:
+      - image: koalaman/shellcheck-alpine:stable
+    steps:
+      - checkout
+      - run:
+          name: Run ShellCheck
+          command: |
+            find . -maxdepth 1 -name "*.sh" -exec shellcheck {} +
+
   build:
     executor: kernel-builder
     steps:
@@ -16,21 +29,34 @@ jobs:
             apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
             git ssh bc bison build-essential flex libssl-dev libelf-dev \
             python3 gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi \
-            wget curl lld zstd cpio zip ca-certificates default-jre-headless
+            wget curl lld zstd cpio zip ca-certificates default-jre-headless ccache
 
       - checkout
 
       - restore_cache:
           keys:
-            - clang-toolchain-v1-{{ checksum "build.sh" }}
+            - builder-v2-{{ .Branch }}-{{ checksum "build.sh" }}
+            - builder-v2-{{ .Branch }}-
+            - builder-v2-
+
+      - restore_cache:
+          keys:
+            - ccache-v1-{{ .Branch }}-{{ epoch }}
+            - ccache-v1-{{ .Branch }}-
+            - ccache-v1-
 
       - run:
           name: Show cache status
           command: |
             if [ -x clang-toolchain/bin/clang ]; then
               echo "Clang cache restored"
-            else
-              echo "No Clang cache found, will download in build.sh"
+            fi
+            if [ -f zipsigner-3.0-dexed.jar ]; then
+              echo "ZipSigner cache restored"
+            fi
+            if [ -d .ccache ]; then
+              echo "CCache restored"
+              ccache -s
             fi
 
       - run:
@@ -40,15 +66,24 @@ jobs:
             ./build.sh
 
       - save_cache:
-          key: clang-toolchain-v1-{{ checksum "build.sh" }}
+          key: builder-v2-{{ .Branch }}-{{ checksum "build.sh" }}
           paths:
             - clang-toolchain
+            - zipsigner-3.0-dexed.jar
+
+      - save_cache:
+          key: ccache-v1-{{ .Branch }}-{{ epoch }}
+          paths:
+            - .ccache
 
       - store_artifacts:
-          path: kernel-src/out-zip
+          path: out-zip
           destination: KERNEL-BUILDS
 
 workflows:
   kernel-workflow:
     jobs:
-      - build
+      - lint
+      - build:
+          requires:
+            - lint
