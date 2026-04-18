@@ -80,6 +80,10 @@ jobs:
           path: out-zip
           destination: KERNEL-BUILDS
 
+      - store_artifacts:
+          path: logs
+          destination: BUILD-LOGS
+
 workflows:
   kernel-workflow:
     jobs:

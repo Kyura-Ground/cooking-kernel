@@ -43,6 +43,10 @@ export KBUILD_BUILD_USER
 export KBUILD_BUILD_HOST
 
 WORKDIR=$(pwd)
+LOG_DIR="${WORKDIR}/logs"
+mkdir -p "${LOG_DIR}"
+BUILD_LOG="${LOG_DIR}/build_$(date +'%Y%m%d_%H%M').log"
+
 JOBS=$(nproc --all)
 BUILD_START=$(date +%s)
 
@@ -61,7 +65,7 @@ if [ "${USE_CCACHE}" -eq 1 ]; then
         export CCACHE_EXEC
     fi
     info "Using ccache: ${CCACHE_EXEC}"
-    "${CCACHE_EXEC}" -M 5G
+    "${CCACHE_EXEC}" -M 10G
 fi
 
 # ──────────────────────────────────────────
@@ -141,6 +145,7 @@ if [ "${BUILD_KSU}" -eq 1 ]; then
     sed -i 's/.*/-Centauri-KSU/' localversion
 else
     info "KernelSU disabled"
+    [ -f localversion ] || echo "-Centauri" > localversion
     sed -i 's/.*/-Centauri/' localversion
 fi
 
@@ -183,9 +188,11 @@ elif [ "${LTO}" -eq 2 ]; then
     scripts/config --file out/.config -e LTO_CLANG -d THINLTO
 fi
 
-make "${MAKE_ARGS[@]}" "${DEFCONFIG}" || error "Defconfig step failed"
+info "Executing defconfig..."
+make "${MAKE_ARGS[@]}" "${DEFCONFIG}" 2>&1 | tee -a "${BUILD_LOG}" || error "Defconfig step failed"
 
-make -j"${JOBS}" "${MAKE_ARGS[@]}" || error "Compilation failed"
+info "Starting compilation..."
+make -j"${JOBS}" "${MAKE_ARGS[@]}" 2>&1 | tee -a "${BUILD_LOG}" || error "Compilation failed"
 
 BUILD_END=$(date +%s)
 ELAPSED=$((BUILD_END - BUILD_START))
