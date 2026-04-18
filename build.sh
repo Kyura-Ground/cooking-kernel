@@ -20,12 +20,12 @@ fi
 
 # Defaults (fallback)
 KERNEL_REPO="${KERNEL_REPO:-https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19}"
-KERNEL_BRANCH="${KERNEL_BRANCH:-susfs}"
+KERNEL_BRANCH="${KERNEL_BRANCH:-lineage-23.2}"
 CLANG_URL="${CLANG_URL:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/9b144befdfd93b90e02c663504fb9f4b95f9faf8/clang-r596125.tar.gz}"
 DEFCONFIG="${DEFCONFIG:-vendor/asus/X00TD_defconfig}"
 ANYKERNEL_REPO="${ANYKERNEL_REPO:-https://github.com/Kyura-Ground/AnyKernel3}"
 ANYKERNEL_BRANCH="${ANYKERNEL_BRANCH:-4.19}"
-BUILD_KSU="${BUILD_KSU:-1}" # Set to 1 to enable KernelSU, 0 to disable
+BUILD_KSU="${BUILD_KSU:-0}" # Set to 1 to enable KernelSU, 0 to disable
 
 # ──────────────────────────────────────────
 # Environment
