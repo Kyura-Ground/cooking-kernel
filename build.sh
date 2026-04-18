@@ -13,7 +13,7 @@ error() { echo -e "\e[1;31m[$(date +%T)] ❌ $1\e[0m"; exit 1; }
 # Configuration
 # ──────────────────────────────────────────
 # Defaults (fallback)
-KERNEL_REPO="${KERNEL_REPO:-https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19}"
+KERNEL_REPO="${KERNEL_REPO:-https://github.com/SonicBSV/android_kernel_asus_sdm660-4.19}"
 KERNEL_BRANCH="${KERNEL_BRANCH:-lineage-23.2}"
 CLANG_URL="${CLANG_URL:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/9b144befdfd93b90e02c663504fb9f4b95f9faf8/clang-r596125.tar.gz}"
 DEFCONFIG="${DEFCONFIG:-vendor/asus/X00TD_defconfig}"
