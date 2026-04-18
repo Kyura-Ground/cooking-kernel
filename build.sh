@@ -30,9 +30,9 @@ if [ -f "config.sh" ]; then
 fi
 
 # Toolchain (Clang) selection logic
-CLANG_VERSION="${CLANG_VERSION:-3}"
+CLANG_VERSION="${CLANG_VERSION:-2}"
 CLANG_URL_1="${CLANG_URL_1:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/9b144befdfd93b90e02c663504fb9f4b95f9faf8/clang-r596125.tar.gz}"
-CLANG_URL_2="${CLANG_URL_2:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/ebcc6c3bef363bc539ea39f45b6abae1dce6ff1a/clang-r574158.tar.gz}"
+CLANG_URL_2="${CLANG_URL_2:-https://github.com/ZyCromerZ/Clang/releases/download/15.0.7-20260208-release/Clang-15.0.7-20260208.tar.gz}"
 CLANG_URL_3="${CLANG_URL_3:-https://github.com/PurrrsLitterbox/LLVM-stable/releases/download/llvmorg-22.1.2/clang.tar.zst}"
 
 if [ "${CLANG_VERSION}" -eq 3 ]; then
@@ -40,7 +40,7 @@ if [ "${CLANG_VERSION}" -eq 3 ]; then
     info "Using Clang 3 (PurrrsLitterbox LLVM)"
 elif [ "${CLANG_VERSION}" -eq 2 ]; then
     CLANG_URL="${CLANG_URL_2}"
-    info "Using Clang 2 (r574158)"
+    info "Using Clang 2 (ZyCromerZ 15.0.7)"
 else
     CLANG_URL="${CLANG_URL_1}"
     info "Using Clang 1 (r596125)"
