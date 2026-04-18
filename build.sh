@@ -48,13 +48,17 @@ BUILD_START=$(date +%s)
 
 # CCache Setup
 if [ "${USE_CCACHE}" -eq 1 ]; then
-    export USE_CCACHE=1
-    export CCACHE_DIR="${WORKDIR}/.ccache"
-    export CCACHE_EXEC=$(which ccache)
+    USE_CCACHE=1
+    export USE_CCACHE
+    CCACHE_DIR="${WORKDIR}/.ccache"
+    export CCACHE_DIR
+    CCACHE_EXEC=$(which ccache || true)
+    export CCACHE_EXEC
     if [ -z "${CCACHE_EXEC}" ]; then
         info "ccache not found, installing..."
         sudo apt-get update -y && sudo apt-get install -y ccache
         CCACHE_EXEC=$(which ccache)
+        export CCACHE_EXEC
     fi
     info "Using ccache: ${CCACHE_EXEC}"
     "${CCACHE_EXEC}" -M 5G
