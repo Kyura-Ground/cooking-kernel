@@ -30,7 +30,7 @@ if [ -f "config.sh" ]; then
 fi
 
 # Toolchain (Clang) selection logic
-CLANG_VERSION="${CLANG_VERSION:-1}"
+CLANG_VERSION="${CLANG_VERSION:-2}"
 CLANG_URL_1="${CLANG_URL_1:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/9b144befdfd93b90e02c663504fb9f4b95f9faf8/clang-r596125.tar.gz}"
 CLANG_URL_2="${CLANG_URL_2:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/ebcc6c3bef363bc539ea39f45b6abae1dce6ff1a/clang-r574158.tar.gz}"
 
