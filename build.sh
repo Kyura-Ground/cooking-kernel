@@ -162,11 +162,10 @@ fi
 if [ "${BUILD_KSU}" -eq 1 ]; then
     info "Setting up KernelSU"
     curl -LSs "https://raw.githubusercontent.com/Sorayukii/KernelSU-Next/stable/kernel/setup.sh" | bash -s hookless || error "KernelSU setup failed"
-    sed -i 's/.*/-Centauri-KSU/' localversion
+    sed -i 's/^CONFIG_LOCALVERSION=.*/CONFIG_LOCALVERSION="-Centauri-KSU"/' "arch/${ARCH}/configs/${DEFCONFIG}"
 else
     info "KernelSU disabled"
-    [ -f localversion ] || echo "-Centauri" > localversion
-    sed -i 's/.*/-Centauri/' localversion
+    sed -i 's/^CONFIG_LOCALVERSION=.*/CONFIG_LOCALVERSION="-Centauri"/' "arch/${ARCH}/configs/${DEFCONFIG}"
 fi
 
 # ──────────────────────────────────────────
@@ -230,7 +229,7 @@ fi
 success "Build successful in ${BUILD_TIME}! Packaging..."
 
 KERNEL_VER="$(make -s kernelversion)"
-LOCALVER="$(cat localversion 2>/dev/null || true)"
+LOCALVER="$(grep -oP '(?<=CONFIG_LOCALVERSION=").*(?=")' "arch/${ARCH}/configs/${DEFCONFIG}" 2>/dev/null || true)"
 COMMIT_MSG="$(git log -1 --pretty=format:"%s")"
 COMMIT_HASH="$(git rev-parse --short HEAD)"
 ZIP_NAME="${KERNEL_VER}${LOCALVER}-$(date +'%Y%m%d-%H%M').zip"
