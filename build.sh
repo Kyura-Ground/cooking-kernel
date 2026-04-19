@@ -18,7 +18,7 @@ KERNEL_BRANCH="${KERNEL_BRANCH:-sonic}"
 DEFCONFIG="${DEFCONFIG:-vendor/asus/X00TD_defconfig}"
 ANYKERNEL_REPO="${ANYKERNEL_REPO:-https://github.com/Kyura-Ground/AnyKernel3}"
 ANYKERNEL_BRANCH="${ANYKERNEL_BRANCH:-4.19}"
-BUILD_KSU="${BUILD_KSU:-0}" # Set to 1 to enable KernelSU, 0 to disable
+BUILD_KSU="${BUILD_KSU:-1}" # Set to 1 to enable KernelSU, 0 to disable
 KBUILD_BUILD_USER="${KBUILD_BUILD_USER:-Builder}"
 KBUILD_BUILD_HOST="${KBUILD_BUILD_HOST:-CI}"
 
