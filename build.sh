@@ -13,8 +13,8 @@ error() { echo -e "\e[1;31m[$(date +%T)] ❌ $1\e[0m"; exit 1; }
 # Configuration
 # ──────────────────────────────────────────
 # Defaults (fallback)
-KERNEL_REPO="${KERNEL_REPO:-https://github.com/SonicBSV/android_kernel_asus_sdm660-4.19}"
-KERNEL_BRANCH="${KERNEL_BRANCH:-lineage-23.2}"
+KERNEL_REPO="${KERNEL_REPO:-https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19}"
+KERNEL_BRANCH="${KERNEL_BRANCH:-sonic}"
 DEFCONFIG="${DEFCONFIG:-vendor/asus/X00TD_defconfig}"
 ANYKERNEL_REPO="${ANYKERNEL_REPO:-https://github.com/Kyura-Ground/AnyKernel3}"
 ANYKERNEL_BRANCH="${ANYKERNEL_BRANCH:-4.19}"
@@ -32,7 +32,7 @@ fi
 # Toolchain (Clang) selection logic
 CLANG_VERSION="${CLANG_VERSION:-2}"
 CLANG_URL_1="${CLANG_URL_1:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/9b144befdfd93b90e02c663504fb9f4b95f9faf8/clang-r596125.tar.gz}"
-CLANG_URL_2="${CLANG_URL_2:-https://github.com/ZyCromerZ/Clang/releases/download/15.0.7-20260208-release/Clang-15.0.7-20260208.tar.gz}"
+CLANG_URL_2="${CLANG_URL_2:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/62cdcefa89e31af2d72c366e8b5ef8db84caea62/clang-r547379.tar.gz}"
 CLANG_URL_3="${CLANG_URL_3:-https://github.com/PurrrsLitterbox/LLVM-stable/releases/download/llvmorg-22.1.2/clang.tar.zst}"
 
 if [ "${CLANG_VERSION}" -eq 3 ]; then
@@ -40,7 +40,7 @@ if [ "${CLANG_VERSION}" -eq 3 ]; then
     info "Using Clang 3 (PurrrsLitterbox LLVM)"
 elif [ "${CLANG_VERSION}" -eq 2 ]; then
     CLANG_URL="${CLANG_URL_2}"
-    info "Using Clang 2 (ZyCromerZ 15.0.7)"
+    info "Using Clang 2 (r547379)"
 else
     CLANG_URL="${CLANG_URL_1}"
     info "Using Clang 1 (r596125)"
