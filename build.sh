@@ -7,7 +7,26 @@ set -euo pipefail
 # ──────────────────────────────────────────
 info() { echo -e "\e[1;34m[$(date +%T)] --- $1 ---\e[0m"; }
 success() { echo -e "\e[1;32m[$(date +%T)] ✅ $1\e[0m"; }
-error() { echo -e "\e[1;31m[$(date +%T)] ❌ $1\e[0m"; exit 1; }
+error() {
+    echo -e "\e[1;31m[$(date +%T)] ❌ $1\e[0m"
+    if [ -n "${TG_BOT_TOKEN:-}" ] && [ -n "${TG_CHAT_ID:-}" ]; then
+        local tg_msg="❌ <b>Build Failed!</b>
+<b>Error:</b> $1"
+        if [ -n "${BUILD_LOG:-}" ] && [ -f "${BUILD_LOG}" ]; then
+            curl -sS -m 300 -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" \
+                -F chat_id="${TG_CHAT_ID}" \
+                -F document=@"${BUILD_LOG}" \
+                -F parse_mode="HTML" \
+                -F caption="${tg_msg}" >/dev/null 2>&1 || true
+        else
+            curl -sS -m 300 -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+                -d chat_id="${TG_CHAT_ID}" \
+                -d parse_mode="HTML" \
+                -d text="${tg_msg}" >/dev/null 2>&1 || true
+        fi
+    fi
+    exit 1
+}
 
 # ──────────────────────────────────────────
 # Configuration
