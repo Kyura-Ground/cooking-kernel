@@ -14,11 +14,11 @@ error() { echo -e "\e[1;31m[$(date +%T)] ❌ $1\e[0m"; exit 1; }
 # ──────────────────────────────────────────
 # Defaults (fallback)
 KERNEL_REPO="${KERNEL_REPO:-https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19}"
-KERNEL_BRANCH="${KERNEL_BRANCH:-sonic}"
+KERNEL_BRANCH="${KERNEL_BRANCH:-sonic-susfs}"
 DEFCONFIG="${DEFCONFIG:-vendor/asus/X00TD_defconfig}"
 ANYKERNEL_REPO="${ANYKERNEL_REPO:-https://github.com/Kyura-Ground/AnyKernel3}"
 ANYKERNEL_BRANCH="${ANYKERNEL_BRANCH:-4.19}"
-BUILD_KSU="${BUILD_KSU:-0}" # Set to 1 to enable KernelSU, 0 to disable
+BUILD_KSU="${BUILD_KSU:-1}" # Set to 1 to enable KernelSU, 0 to disable
 KBUILD_BUILD_USER="${KBUILD_BUILD_USER:-Builder}"
 KBUILD_BUILD_HOST="${KBUILD_BUILD_HOST:-CI}"
 
