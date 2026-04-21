@@ -74,9 +74,9 @@ LTO="${LTO:-0}" # 0: Default, 1: Thin, 2: Full (if supported)
 # Toolchain (GCC Cross Compiler) logic
 USE_GCC_CROSS="${USE_GCC_CROSS:-1}" # Set to 1 to use Clang x GCC 11.2.1
 GCC_64_REPO="${GCC_64_REPO:-https://github.com/mvaisakh/gcc-arm64}"
-GCC_64_BRANCH="${GCC_64_BRANCH:-gcc-master}"
+GCC_64_BRANCH="${GCC_64_BRANCH:-gcc-new}"
 GCC_32_REPO="${GCC_32_REPO:-https://github.com/mvaisakh/gcc-arm}"
-GCC_32_BRANCH="${GCC_32_BRANCH:-gcc-master}"
+GCC_32_BRANCH="${GCC_32_BRANCH:-gcc-new}"
 
 # Export build environment
 export ARCH=arm64
