@@ -234,6 +234,12 @@ if [ "${USE_GCC_CROSS}" -eq 1 ]; then
     MAKE_ARGS+=(
         CROSS_COMPILE="aarch64-elf-"
         CROSS_COMPILE_ARM32="arm-eabi-"
+        LD="ld.lld"
+        AR="llvm-ar"
+        NM="llvm-nm"
+        OBJCOPY="llvm-objcopy"
+        OBJDUMP="llvm-objdump"
+        STRIP="llvm-strip"
     )
     if [ "${USE_CCACHE}" -eq 1 ]; then
         MAKE_ARGS+=( CC="ccache clang" HOSTCC="ccache gcc" )
