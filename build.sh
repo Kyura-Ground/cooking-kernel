@@ -33,7 +33,7 @@ error() {
 # ──────────────────────────────────────────
 # Defaults (fallback)
 KERNEL_REPO="${KERNEL_REPO:-https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19}"
-KERNEL_BRANCH="${KERNEL_BRANCH:-lineage-23.2}"
+KERNEL_BRANCH="${KERNEL_BRANCH:-lineage-23.2-test}"
 DEFCONFIG="${DEFCONFIG:-vendor/asus/X00TD_defconfig}"
 ANYKERNEL_REPO="${ANYKERNEL_REPO:-https://github.com/Kyura-Ground/AnyKernel3}"
 ANYKERNEL_BRANCH="${ANYKERNEL_BRANCH:-4.19}"
@@ -49,7 +49,7 @@ if [ -f "config.sh" ]; then
 fi
 
 # Toolchain (Clang) selection logic
-CLANG_VERSION="${CLANG_VERSION:-2}"
+CLANG_VERSION="${CLANG_VERSION:-1}"
 CLANG_URL_1="${CLANG_URL_1:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/9b144befdfd93b90e02c663504fb9f4b95f9faf8/clang-r596125.tar.gz}"
 CLANG_URL_2="${CLANG_URL_2:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/62cdcefa89e31af2d72c366e8b5ef8db84caea62/clang-r547379.tar.gz}"
 CLANG_URL_3="${CLANG_URL_3:-https://github.com/PurrrsLitterbox/LLVM-stable/releases/download/llvmorg-22.1.2/clang.tar.zst}"
@@ -70,6 +70,13 @@ USE_CCACHE="${USE_CCACHE:-1}"
 USE_LLVM="${USE_LLVM:-1}"
 USE_LLVM_IAS="${USE_LLVM_IAS:-1}"
 LTO="${LTO:-0}" # 0: Default, 1: Thin, 2: Full (if supported)
+
+# Toolchain (GCC Cross Compiler) logic
+USE_GCC_CROSS="${USE_GCC_CROSS:-1}" # Set to 1 to use Clang x GCC 11.2.1
+GCC_64_REPO="${GCC_64_REPO:-https://github.com/mvaisakh/gcc-arm64}"
+GCC_64_BRANCH="${GCC_64_BRANCH:-gcc-master}"
+GCC_32_REPO="${GCC_32_REPO:-https://github.com/mvaisakh/gcc-arm}"
+GCC_32_BRANCH="${GCC_32_BRANCH:-gcc-master}"
 
 # Export build environment
 export ARCH=arm64
@@ -142,6 +149,22 @@ setup_anykernel() {
     fi
 }
 
+# Task 5: Fetch GCC 64-bit
+setup_gcc_64() {
+    if [ "${USE_GCC_CROSS}" -eq 1 ] && [ ! -d "gcc-arm64" ]; then
+        info "Cloning GCC ARM64 (CROSS_COMPILE)"
+        git clone --depth=1 -b "${GCC_64_BRANCH}" "${GCC_64_REPO}" gcc-arm64 || return 1
+    fi
+}
+
+# Task 6: Fetch GCC 32-bit
+setup_gcc_32() {
+    if [ "${USE_GCC_CROSS}" -eq 1 ] && [ ! -d "gcc-arm32" ]; then
+        info "Cloning GCC ARM32 (CROSS_COMPILE_ARM32)"
+        git clone --depth=1 -b "${GCC_32_BRANCH}" "${GCC_32_REPO}" gcc-arm32 || return 1
+    fi
+}
+
 # Task 4: Fetch ZipSigner
 setup_zipsigner() {
     ZIPSIGNER_JAR="${WORKDIR}/zipsigner-3.0-dexed.jar"
@@ -154,12 +177,19 @@ setup_zipsigner() {
 # Run tasks in background
 setup_kernel & PID_KERNEL=$!
 setup_clang & PID_KERNEL_CLANG=$!
+setup_gcc_64 & PID_GCC_64=$!
+setup_gcc_32 & PID_GCC_32=$!
 setup_anykernel & PID_ANYKERNEL=$!
 setup_zipsigner & PID_ZIPSIGNER=$!
 
 # Wait for essential tasks before build
 wait "${PID_KERNEL}" || error "Kernel source setup failed"
 wait "${PID_KERNEL_CLANG}" || error "Clang toolchain setup failed"
+if [ "${USE_GCC_CROSS}" -eq 1 ]; then
+    wait "${PID_GCC_64}" || error "GCC 64-bit setup failed"
+    wait "${PID_GCC_32}" || error "GCC 32-bit setup failed"
+    export PATH="${WORKDIR}/gcc-arm64/bin:${WORKDIR}/gcc-arm32/bin:${PATH}"
+fi
 
 export PATH="${WORKDIR}/clang-toolchain/bin:${PATH}"
 
@@ -199,22 +229,35 @@ MAKE_ARGS=(
     SUBARCH="${SUBARCH}"
 )
 
-if [ "${USE_LLVM}" -eq 1 ]; then
+if [ "${USE_GCC_CROSS}" -eq 1 ]; then
+    info "Using Clang x GCC Cross Compile"
     MAKE_ARGS+=(
-        LLVM=1
+        CROSS_COMPILE="aarch64-elf-"
+        CROSS_COMPILE_ARM32="arm-eabi-"
     )
-    if [ "${USE_LLVM_IAS}" -eq 1 ]; then
+    if [ "${USE_CCACHE}" -eq 1 ]; then
+        MAKE_ARGS+=( CC="ccache clang" HOSTCC="ccache gcc" )
+    else
+        MAKE_ARGS+=( CC="clang" HOSTCC="gcc" )
+    fi
+else
+    if [ "${USE_LLVM}" -eq 1 ]; then
         MAKE_ARGS+=(
-            LLVM_IAS=1
+            LLVM=1
+        )
+        if [ "${USE_LLVM_IAS}" -eq 1 ]; then
+            MAKE_ARGS+=(
+                LLVM_IAS=1
+            )
+        fi
+    fi
+
+    if [ "${USE_CCACHE}" -eq 1 ]; then
+        MAKE_ARGS+=(
+            CC="ccache clang"
+            HOSTCC="ccache gcc"
         )
     fi
-fi
-
-if [ "${USE_CCACHE}" -eq 1 ]; then
-    MAKE_ARGS+=(
-        CC="ccache clang"
-        HOSTCC="ccache gcc"
-    )
 fi
 
 # LTO Optimization
