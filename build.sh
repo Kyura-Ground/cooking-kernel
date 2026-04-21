@@ -51,22 +51,8 @@ if [ -f "config.sh" ]; then
     source config.sh
 fi
 
-# Toolchain (Clang) selection logic
-CLANG_VERSION="${CLANG_VERSION:-1}"
-CLANG_URL_1="${CLANG_URL_1:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/9b144befdfd93b90e02c663504fb9f4b95f9faf8/clang-r596125.tar.gz}"
-CLANG_URL_2="${CLANG_URL_2:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/62cdcefa89e31af2d72c366e8b5ef8db84caea62/clang-r547379.tar.gz}"
-CLANG_URL_3="${CLANG_URL_3:-https://github.com/PurrrsLitterbox/LLVM-stable/releases/download/llvmorg-22.1.2/clang.tar.zst}"
-
-if [ "${CLANG_VERSION}" -eq 3 ]; then
-    CLANG_URL="${CLANG_URL_3}"
-    info "Using Clang 3 (PurrrsLitterbox LLVM)"
-elif [ "${CLANG_VERSION}" -eq 2 ]; then
-    CLANG_URL="${CLANG_URL_2}"
-    info "Using Clang 2 (r547379)"
-else
-    CLANG_URL="${CLANG_URL_1}"
-    info "Using Clang 1 (r596125)"
-fi
+# Toolchain (Clang) URL
+CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/f60b8b55282f002f594f452ce22dfd6cf1fd7e3c/clang-r596125.tar.gz"
 
 # Build Options
 USE_CCACHE="${USE_CCACHE:-1}"
