@@ -2,6 +2,9 @@
 # Kernel builder for CircleCI — X00TD
 set -euo pipefail
 
+# Set Timezone to WIB
+export TZ="Asia/Jakarta"
+
 # ──────────────────────────────────────────
 # Functions
 # ──────────────────────────────────────────
