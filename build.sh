@@ -4,6 +4,7 @@ set -euo pipefail
 
 # Set Timezone to WIB
 export TZ="Asia/Jakarta"
+echo "Build started at: $(date) (Timezone: $TZ)"
 
 # ──────────────────────────────────────────
 # Functions
