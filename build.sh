@@ -59,7 +59,7 @@ CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-
 USE_CCACHE="${USE_CCACHE:-1}"
 USE_LLVM="${USE_LLVM:-1}"
 USE_LLVM_IAS="${USE_LLVM_IAS:-1}"
-LTO="${LTO:-0}" # 0: Default, 1: Thin, 2: Full (if supported)
+LTO="${LTO:-2}" # 0: Default, 1: Thin, 2: Full (if supported)
 
 # Toolchain (GCC Cross Compiler) logic
 USE_GCC_CROSS="${USE_GCC_CROSS:-1}" # Set to 1 to use Clang x GCC 11.2.1
