@@ -201,10 +201,10 @@ fi
 if [ "${BUILD_KSU}" -eq 1 ]; then
     info "Setting up KernelSU"
     curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash || error "KernelSU setup failed"
-    sed -i 's/^CONFIG_LOCALVERSION=.*/CONFIG_LOCALVERSION="-Centauri-KSU"/' "arch/${ARCH}/configs/${DEFCONFIG}"
+    sed -i 's/^CONFIG_LOCALVERSION=.*/CONFIG_LOCALVERSION="-StoneSky-KSU"/' "arch/${ARCH}/configs/${DEFCONFIG}"
 else
     info "KernelSU disabled"
-    sed -i 's/^CONFIG_LOCALVERSION=.*/CONFIG_LOCALVERSION="-Centauri"/' "arch/${ARCH}/configs/${DEFCONFIG}"
+    sed -i 's/^CONFIG_LOCALVERSION=.*/CONFIG_LOCALVERSION="-StoneSky"/' "arch/${ARCH}/configs/${DEFCONFIG}"
 fi
 
 # ──────────────────────────────────────────
@@ -336,7 +336,7 @@ send_telegram() {
     compiler_ver=$(clang --version | head -n 1 | perl -pe 's/ \(.*//')
     
     local msg="✅ <b>Build Finished</b>
-<b>Kernel:</b> Centauri
+<b>Kernel:</b> StoneSky
 <b>Version:</b> ${ZIP_NAME}
 <b>Branch:</b> ${KERNEL_BRANCH}
 <b>Compiler:</b> ${compiler_ver}
