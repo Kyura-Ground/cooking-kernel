@@ -333,13 +333,20 @@ send_telegram() {
     local compiler_ver
     compiler_ver=$(clang --version | head -n 1 | perl -pe 's/ \(.*//')
     
-    local msg="✅ <b>Build Finished</b>
-<b>Kernel:</b> StoneSky
-<b>Version:</b> ${ZIP_NAME}
-<b>Branch:</b> ${KERNEL_BRANCH}
-<b>Compiler:</b> ${compiler_ver}
-<b>Time:</b> ${BUILD_TIME}
-<b>Last Commit:</b> <a href=\"${KERNEL_REPO}/commit/${COMMIT_HASH}\">${COMMIT_HASH}</a>: ${COMMIT_MSG}"
+    local msg="🌌 <b>StoneSky Kernel | X00TD</b>
+
+<blockquote><b>Build Information:</b>
+• <b>Device:</b> Zenfone Max Pro M1
+• <b>Version:</b> <code>${ZIP_NAME}</code>
+• <b>Branch:</b> <code>${KERNEL_BRANCH}</code>
+• <b>Toolchain:</b> ${compiler_ver}
+• <b>Root:</b> ResukiSU Integrated 🛡️
+
+<b>Changelog:</b>
+• <a href=\"${KERNEL_REPO}/commit/${COMMIT_HASH}\">${COMMIT_HASH}</a>: ${COMMIT_MSG}</blockquote>
+
+🔗 <b>Source:</b> <a href=\"${KERNEL_REPO}\">GitHub</a>
+👤 <b>Maintainer:</b> @ikwfahmi"
 
     if ! curl -sS -m 300 -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" \
         -F chat_id="${TG_CHAT_ID}" \
