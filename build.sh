@@ -331,9 +331,9 @@ send_telegram() {
     
     info "Uploading to Telegram"
     local compiler_ver
-    compiler_ver=$(clang --version | head -n 1 | perl -pe 's/ \(.*//')
+    compiler_ver=$(clang --version | head -n 1 | perl -pe 's/.*based on (r\d+).*/AOSP Clang $1/; s/Android \(.*\) // if !/AOSP Clang/;')
     
-    local msg="🌌 <b>StoneSky Kernel | X00TD</b>
+    local msg="🌌 <b>SkyWarp Kernel | X00TD</b>
 
 <blockquote><b>Build Information:</b>
 • <b>Device:</b> Zenfone Max Pro M1

@@ -1,7 +1,7 @@
-# 🌌 StoneSky Kernel Builder
+# 🌌 SkyWarp Kernel Builder
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Kernel-StoneSky-blueviolet?style=for-the-badge&logo=linux" alt="Kernel Name">
+  <img src="https://img.shields.io/badge/Kernel-SkyWarp-blueviolet?style=for-the-badge&logo=linux" alt="Kernel Name">
   <img src="https://img.shields.io/badge/Platform-Android-green?style=for-the-badge&logo=android" alt="Platform">
   <img src="https://img.shields.io/badge/Build-Optimized-orange?style=for-the-badge&logo=github-actions" alt="Build">
 </p>
@@ -9,7 +9,7 @@
 ---
 
 ### 🚀 Overview
-**StoneSky** is a high-performance, automated kernel building environment designed for efficiency and simplicity. This repository contains the core scripts and configurations required to compile the StoneSky kernel with modern toolchains and optimizations.
+**SkyWarp** is a high-performance, automated kernel building environment designed for efficiency and simplicity. This repository contains the core scripts and configurations required to compile the SkyWarp kernel with modern toolchains and optimizations.
 
 ### ✨ Key Features
 - 🛠️ **Modern Toolchains**: Powered by the latest AOSP Clang and GCC cross-compilers.
@@ -54,11 +54,11 @@ bash build.sh
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `KERNEL_REPO` | Source repository for the kernel | (Asus SDM660) |
-| `KERNEL_BRANCH` | Git branch to compile | `StoneSky` |
+| `KERNEL_BRANCH` | Git branch to compile | `SkyWarp` |
 | `DEFCONFIG` | Device-specific configuration file | `vendor/asus/X00TD_defconfig` |
 | `USE_LLVM` | Build using LLVM/Clang | `1` |
 | `BUILD_KSU` | Enable KernelSU integration | `1` |
-| `LTO` | Link Time Optimization level | `0` |
+| `LTO` | Link Time Optimization level | `1` |
 
 ---
 
