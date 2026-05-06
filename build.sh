@@ -37,13 +37,13 @@ error() {
 # ──────────────────────────────────────────
 # Defaults (fallback)
 KERNEL_REPO="${KERNEL_REPO:-https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19}"
-KERNEL_BRANCH="${KERNEL_BRANCH:-SkyWarp-susfs}"
+KERNEL_BRANCH="${KERNEL_BRANCH:-perf-KSU}"
 DEFCONFIG="${DEFCONFIG:-vendor/asus/X00TD_defconfig}"
 ANYKERNEL_REPO="${ANYKERNEL_REPO:-https://github.com/Kyura-Ground/AnyKernel3}"
 ANYKERNEL_BRANCH="${ANYKERNEL_BRANCH:-4.19}"
 BUILD_KSU="${BUILD_KSU:-1}" # Set to 1 to enable KernelSU, 0 to disable
 KBUILD_BUILD_USER="${KBUILD_BUILD_USER:-Kyura}"
-KBUILD_BUILD_HOST="${KBUILD_BUILD_HOST:-Labs}"
+KBUILD_BUILD_HOST="${KBUILD_BUILD_HOST:-github}"
 
 # Load custom config if exists (overrides defaults)
 if [ -f "config.sh" ]; then
@@ -200,7 +200,7 @@ fi
 
 if [ "${BUILD_KSU}" -eq 1 ]; then
     info "Setting up KernelSU"
-    curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash || error "KernelSU setup failed"
+    curl -LSs "https://raw.githubusercontent.com/backslashxx/KernelSU/master/kernel/setup.sh" | bash -s master || error "KernelSU setup failed"
 else
     info "KernelSU disabled"
 fi
