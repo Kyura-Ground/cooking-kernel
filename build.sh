@@ -333,20 +333,17 @@ send_telegram() {
     local compiler_ver
     compiler_ver=$(clang --version | head -n 1 | perl -pe 's/.*based on (r\d+).*/AOSP Clang $1/; s/Android \(.*\) // if !/AOSP Clang/;')
     
-    local msg="🌌 <b>SkyWarp Kernel | X00TD</b>
+    local msg="🌌 <b>perf Kernel | X00TD</b>
 
-<blockquote><b>Build Information:</b>
-• <b>Device:</b> Zenfone Max Pro M1
-• <b>Version:</b> <code>${ZIP_NAME}</code>
-• <b>Branch:</b> <code>${KERNEL_BRANCH}</code>
-• <b>Toolchain:</b> ${compiler_ver}
-• <b>Root:</b> ResukiSU Integrated 🛡️
+    <blockquote><b>Build Information:</b>
+    • <b>Device:</b> Zenfone Max Pro M1
+    • <b>Version:</b> <code>${ZIP_NAME}</code>
+    • <b>Branch:</b> <code>${KERNEL_BRANCH}</code>
+    • <b>Toolchain:</b> ${compiler_ver}
+    • <b>Root:</b> KernelSU Integrated
 
-<b>Changelog:</b>
-• <a href=\"${KERNEL_REPO}/commit/${COMMIT_HASH}\">${COMMIT_HASH}</a>: ${COMMIT_MSG}</blockquote>
-
-🔗 <b>Source:</b> <a href=\"${KERNEL_REPO}\">GitHub</a>
-👤 <b>Maintainer:</b> @ikwfahmi"
+    <b>Changelog:</b>
+    • <a href=\"${KERNEL_REPO}/commit/${COMMIT_HASH}\">${COMMIT_HASH}</a>: ${COMMIT_MSG}</blockquote>"
 
     if ! curl -sS -m 300 -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" \
         -F chat_id="${TG_CHAT_ID}" \
