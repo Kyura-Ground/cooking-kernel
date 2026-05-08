@@ -38,7 +38,7 @@ error() {
 # Defaults (fallback)
 KERNEL_NAME="${KERNEL_NAME:-perf Kernel}"
 KERNEL_REPO="${KERNEL_REPO:-https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19}"
-KERNEL_BRANCH="${KERNEL_BRANCH:-perf-KSU}"
+KERNEL_BRANCH="${KERNEL_BRANCH:-perf}"
 DEFCONFIG="${DEFCONFIG:-vendor/asus/X00TD_defconfig}"
 ANYKERNEL_REPO="${ANYKERNEL_REPO:-https://github.com/Kyura-Ground/AnyKernel3}"
 ANYKERNEL_BRANCH="${ANYKERNEL_BRANCH:-4.19}"
@@ -256,7 +256,11 @@ else
 fi
 
 info "Executing defconfig..."
-make "${MAKE_ARGS[@]}" "${DEFCONFIG}" 2>&1 | tee -a "${BUILD_LOG}" || error "Defconfig step failed"
+if [ "${BUILD_KSU}" -eq 1 ]; then
+    make "${MAKE_ARGS[@]}" "${DEFCONFIG}" vendor/extra/xxksu.config 2>&1 | tee -a "${BUILD_LOG}" || error "Defconfig step failed"
+else
+    make "${MAKE_ARGS[@]}" "${DEFCONFIG}" 2>&1 | tee -a "${BUILD_LOG}" || error "Defconfig step failed"
+fi
 
 # LTO Optimization
 if [ "${LTO}" -eq 1 ]; then
