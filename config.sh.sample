@@ -4,7 +4,7 @@ KERNEL_BRANCH="lineage-23.2"
 DEFCONFIG="vendor/asus/X00TD_defconfig"
 
 # Toolchain
-CLANG_VERSION=1 # 1: Clang r596125, 2: Clang r547379, 3: PurrrsLitterbox LLVM
+CLANG_VERSION=1 # 1: Clang r596125, 2: Clang 20 (r547379), 3: PurrrsLitterbox LLVM
 CLANG_URL_1="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/9b144befdfd93b90e02c663504fb9f4b95f9faf8/clang-r596125.tar.gz"
 CLANG_URL_2="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/62cdcefa89e31af2d72c366e8b5ef8db84caea62/clang-r547379.tar.gz"
 CLANG_URL_3="https://github.com/PurrrsLitterbox/LLVM-stable/releases/download/llvmorg-22.1.2/clang.tar.zst"

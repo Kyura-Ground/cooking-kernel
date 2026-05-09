@@ -45,6 +45,10 @@ ANYKERNEL_BRANCH="${ANYKERNEL_BRANCH:-4.19}"
 BUILD_KSU="${BUILD_KSU:-1}" # Set to 1 to enable KernelSU, 0 to disable
 KBUILD_BUILD_USER="${KBUILD_BUILD_USER:-Kyura}"
 KBUILD_BUILD_HOST="${KBUILD_BUILD_HOST:-github}"
+CLANG_VERSION="${CLANG_VERSION:-1}" # 1: Clang r596125, 2: Clang 20 (r547379), 3: PurrrsLitterbox LLVM
+CLANG_URL_1="${CLANG_URL_1:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/f60b8b55282f002f594f452ce22dfd6cf1fd7e3c/clang-r596125.tar.gz}"
+CLANG_URL_2="${CLANG_URL_2:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/62cdcefa89e31af2d72c366e8b5ef8db84caea62/clang-r547379.tar.gz}"
+CLANG_URL_3="${CLANG_URL_3:-https://github.com/PurrrsLitterbox/LLVM-stable/releases/download/llvmorg-22.1.2/clang.tar.zst}"
 
 # Load custom config if exists (overrides defaults)
 if [ -f "config.sh" ]; then
@@ -54,7 +58,14 @@ if [ -f "config.sh" ]; then
 fi
 
 # Toolchain (Clang) URL
-CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/f60b8b55282f002f594f452ce22dfd6cf1fd7e3c/clang-r596125.tar.gz"
+if [ -z "${CLANG_URL:-}" ]; then
+    case "${CLANG_VERSION}" in
+        1) CLANG_URL="${CLANG_URL_1}" ;;
+        2) CLANG_URL="${CLANG_URL_2}" ;;
+        3) CLANG_URL="${CLANG_URL_3}" ;;
+        *) error "Unsupported CLANG_VERSION: ${CLANG_VERSION}" ;;
+    esac
+fi
 
 # Build Options
 USE_CCACHE="${USE_CCACHE:-1}"
