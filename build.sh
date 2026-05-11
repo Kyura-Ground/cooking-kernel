@@ -302,8 +302,6 @@ success "Build successful in ${BUILD_TIME}! Packaging..."
 
 KERNEL_VER="$(make -s kernelversion)"
 LOCALVER="$(grep -oP '(?<=CONFIG_LOCALVERSION=").*(?=")' "arch/${ARCH}/configs/${DEFCONFIG}" 2>/dev/null || true)"
-COMMIT_MSG="$(git log -1 --pretty=format:"%s")"
-COMMIT_HASH="$(git rev-parse --short HEAD)"
 ZIP_NAME="${KERNEL_VER}${LOCALVER}-$(date +'%Y%m%d-%H%M').zip"
 
 # Wait for AnyKernel3 (started in background)
