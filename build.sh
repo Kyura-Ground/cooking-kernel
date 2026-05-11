@@ -343,36 +343,45 @@ success "ZIP: ${ZIP_NAME}"
 # Notifications
 # ──────────────────────────────────────────
 send_telegram() {
-    [ -z "${TG_BOT_TOKEN}" ] || [ -z "${TG_CHAT_ID}" ] && return 0
-    
-    info "Uploading to Telegram"
-    local compiler_ver
-    compiler_ver=$(clang --version | head -n 1 | perl -pe 's/.*based on (r\d+).*/AOSP Clang $1/; s/Android \(.*\) // if !/AOSP Clang/;')
-    
-    local root_status="None"
-    if [ "${BUILD_KSU}" -eq 1 ]; then
-        root_status="KernelSU Integrated 🛡️"
+    if [ -z "${TG_BOT_TOKEN:-}" ] || [ -z "${TG_CHAT_ID:-}" ]; then
+        info "Telegram credentials not set, skipping upload."
+        return 0
     fi
 
-    local msg="<b>${KERNEL_NAME} | X00TD</b>
+    local zip_path="out-zip/${ZIP_NAME}"
+    if [ ! -f "${zip_path}" ]; then
+        info "Telegram upload skipped: ZIP not found at ${zip_path}"
+        return 0
+    fi
+    
+    info "Uploading to Telegram"
+    local md5
+    md5=$(md5sum "${zip_path}" | cut -d' ' -f1)
 
-<blockquote><b>Build Information:</b>
-• <b>Device:</b> Zenfone Max Pro M1
-• <b>Version:</b> <code>${ZIP_NAME}</code>
-• <b>Branch:</b> <code>${KERNEL_BRANCH}</code>
-• <b>Toolchain:</b> ${compiler_ver}
-• <b>Root:</b> ${root_status}
+    local h=$((ELAPSED / 3600))
+    local m=$(((ELAPSED % 3600) / 60))
+    local s=$((ELAPSED % 60))
 
-<b>Changelog:</b>
-• <a href=\"${KERNEL_REPO}/commit/${COMMIT_HASH}\">${COMMIT_HASH}</a>: ${COMMIT_MSG}</blockquote>"
+    local compiler_ver
+    compiler_ver=$(clang --version | perl -pe 's/\(http.*?\)//gs' | sed 's/[[:space:]]*$//' | head -n 1)
 
-    if ! curl -sS -m 300 -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" \
+    local msg="build succeeded in ${h}h ${m}m ${s}s
+Device: <code>X00TD</code>
+md5: <code>${md5}</code>
+Compiler: ${compiler_ver}"
+
+    local tg_resp
+    tg_resp=$(curl -sS -m 300 -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" \
         -F chat_id="${TG_CHAT_ID}" \
-        -F document=@"out-zip/${ZIP_NAME}" \
+        -F document=@"${zip_path}" \
         -F parse_mode="HTML" \
-        -F caption="${msg}"; then
-        
-        info "Telegram upload failed! Attempting Pixeldrain fallback..."
+        -F caption="${msg}" 2>&1 || true)
+
+    if echo "${tg_resp}" | grep -q '"ok":true'; then
+        info "Telegram upload ok"
+    else
+        info "Telegram upload failed. Response: ${tg_resp:-<empty>}"
+        info "Attempting Pixeldrain fallback..."
         send_pixeldrain
     fi
 }
