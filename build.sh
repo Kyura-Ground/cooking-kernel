@@ -38,7 +38,7 @@ error() {
 # Defaults (fallback)
 KERNEL_NAME="${KERNEL_NAME:-perf Kernel}"
 KERNEL_REPO="${KERNEL_REPO:-https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19}"
-KERNEL_BRANCH="${KERNEL_BRANCH:-perf}"
+KERNEL_BRANCH="${KERNEL_BRANCH:-perf-test}"
 DEFCONFIG="${DEFCONFIG:-vendor/asus/X00TD_defconfig}"
 ANYKERNEL_REPO="${ANYKERNEL_REPO:-https://github.com/Kyura-Ground/AnyKernel3}"
 ANYKERNEL_BRANCH="${ANYKERNEL_BRANCH:-4.19}"
@@ -200,6 +200,10 @@ export PATH="${WORKDIR}/clang-toolchain/bin:${PATH}"
 # ──────────────────────────────────────────
 cd kernel-src || error "Kernel source directory not found"
 
+# Rename localversion to perf
+info "Renaming localversion to perf"
+echo "-perf" > localversion
+
 # Patching mechanism
 if [ -d "${WORKDIR}/patches" ]; then
     info "Applying patches"
@@ -301,7 +305,7 @@ fi
 success "Build successful in ${BUILD_TIME}! Packaging..."
 
 KERNEL_VER="$(make -s kernelversion)"
-LOCALVER="$(grep -oP '(?<=CONFIG_LOCALVERSION=").*(?=")' "arch/${ARCH}/configs/${DEFCONFIG}" 2>/dev/null || true)"
+LOCALVER="$(cat localversion 2>/dev/null || true)"
 ZIP_NAME="${KERNEL_VER}${LOCALVER}-$(date +'%Y%m%d-%H%M').zip"
 
 # Wait for AnyKernel3 (started in background)
