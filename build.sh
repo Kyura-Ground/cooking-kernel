@@ -38,7 +38,7 @@ error() {
 # Defaults (fallback)
 KERNEL_NAME="${KERNEL_NAME:-perf Kernel}"
 KERNEL_REPO="${KERNEL_REPO:-https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19}"
-KERNEL_BRANCH="${KERNEL_BRANCH:-Ratibor}"
+KERNEL_BRANCH="${KERNEL_BRANCH:-perf}"
 DEFCONFIG="${DEFCONFIG:-vendor/asus/X00TD_defconfig}"
 ANYKERNEL_REPO="${ANYKERNEL_REPO:-https://github.com/Kyura-Ground/AnyKernel3}"
 ANYKERNEL_BRANCH="${ANYKERNEL_BRANCH:-4.19}"
@@ -345,47 +345,46 @@ success "ZIP: ${ZIP_NAME}"
 # Notifications
 # ──────────────────────────────────────────
 send_telegram() {
-    if [ -z "${TG_BOT_TOKEN:-}" ] || [ -z "${TG_CHAT_ID:-}" ]; then
-        info "Telegram credentials not set, skipping upload."
-        return 0
-    fi
-
     local zip_path="out-zip/${ZIP_NAME}"
     if [ ! -f "${zip_path}" ]; then
         info "Telegram upload skipped: ZIP not found at ${zip_path}"
         return 0
     fi
-    
-    info "Uploading to Telegram"
-    local md5
-    md5=$(md5sum "${zip_path}" | cut -d' ' -f1)
 
-    local h=$((ELAPSED / 3600))
-    local m=$(((ELAPSED % 3600) / 60))
-    local s=$((ELAPSED % 60))
+    if [ -z "${TG_BOT_TOKEN:-}" ] || [ -z "${TG_CHAT_ID:-}" ]; then
+        info "Telegram credentials not set, skipping upload."
+    else
+        info "Uploading to Telegram"
+        local md5
+        md5=$(md5sum "${zip_path}" | cut -d' ' -f1)
 
-    local compiler_ver
-    compiler_ver=$(clang --version | perl -pe 's/\(http.*?\)//gs' | sed 's/[[:space:]]*$//' | head -n 1)
+        local h=$((ELAPSED / 3600))
+        local m=$(((ELAPSED % 3600) / 60))
+        local s=$((ELAPSED % 60))
 
-    local msg="build succeeded in ${h}h ${m}m ${s}s
+        local compiler_ver
+        compiler_ver=$(clang --version | perl -pe 's/\(http.*?\)//gs' | sed 's/[[:space:]]*$//' | head -n 1)
+
+        local msg="build succeeded in ${h}h ${m}m ${s}s
 Device: <code>X00TD</code>
 md5: <code>${md5}</code>
 Compiler: ${compiler_ver}"
 
-    local tg_resp
-    tg_resp=$(curl -sS -m 300 -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" \
-        -F chat_id="${TG_CHAT_ID}" \
-        -F document=@"${zip_path}" \
-        -F parse_mode="HTML" \
-        -F caption="${msg}" 2>&1 || true)
+        local tg_resp
+        tg_resp=$(curl -sS -m 300 -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" \
+            -F chat_id="${TG_CHAT_ID}" \
+            -F document=@"${zip_path}" \
+            -F parse_mode="HTML" \
+            -F caption="${msg}" 2>&1 || true)
 
-    if echo "${tg_resp}" | grep -q '"ok":true'; then
-        info "Telegram upload ok"
-    else
-        info "Telegram upload failed. Response: ${tg_resp:-<empty>}"
-        info "Attempting Pixeldrain fallback..."
-        send_pixeldrain
+        if echo "${tg_resp}" | grep -q '"ok":true'; then
+            info "Telegram upload ok"
+        else
+            info "Telegram upload failed. Response: ${tg_resp:-<empty>}"
+        fi
     fi
+
+    send_pixeldrain
 }
 
 send_pixeldrain() {
