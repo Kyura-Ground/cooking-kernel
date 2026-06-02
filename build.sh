@@ -200,10 +200,6 @@ export PATH="${WORKDIR}/clang-toolchain/bin:${PATH}"
 # ──────────────────────────────────────────
 cd kernel-src || error "Kernel source directory not found"
 
-# Rename localversion to perf
-info "Renaming localversion to perf"
-echo "-perf" > localversion
-
 # Patching mechanism
 if [ -d "${WORKDIR}/patches" ]; then
     info "Applying patches"
