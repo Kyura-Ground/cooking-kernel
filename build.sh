@@ -46,7 +46,7 @@ BUILD_KSU="${BUILD_KSU:-0}" # Set to 1 to enable KernelSU, 0 to disable
 KBUILD_BUILD_USER="${KBUILD_BUILD_USER:-Kyura}"
 KBUILD_BUILD_HOST="${KBUILD_BUILD_HOST:-github}"
 CLANG_VERSION="${CLANG_VERSION:-1}" # 1: Clang r596125, 2: Clang 20 (r547379), 3: PurrrsLitterbox LLVM
-CLANG_URL_1="${CLANG_URL_1:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/f60b8b55282f002f594f452ce22dfd6cf1fd7e3c/clang-r596125.tar.gz}"
+CLANG_URL_1="${CLANG_URL_1:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/8b6826407e25a197d7cf7ceacab0bf67c11173de/clang-r596125.tar.gz}"
 CLANG_URL_2="${CLANG_URL_2:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/62cdcefa89e31af2d72c366e8b5ef8db84caea62/clang-r547379.tar.gz}"
 CLANG_URL_3="${CLANG_URL_3:-https://github.com/PurrrsLitterbox/LLVM-stable/releases/download/llvmorg-22.1.2/clang.tar.zst}"
 
@@ -130,15 +130,28 @@ setup_kernel() {
 # Task 2: Fetch & extract Clang toolchain
 setup_clang() {
     mkdir -p clang-toolchain
-    if [ -x "clang-toolchain/bin/clang" ]; then
+    local url_marker="clang-toolchain/.clang-url"
+    local needs_download=0
+
+    if [ -f "${url_marker}" ]; then
+        if [ "$(cat "${url_marker}")" != "${CLANG_URL}" ]; then
+            needs_download=1
+        fi
+    else
+        needs_download=1
+    fi
+
+    if [ -x "clang-toolchain/bin/clang" ] && [ "${needs_download}" -eq 0 ]; then
         info "Using cached Clang toolchain"
     else
         info "Downloading Clang Toolchain"
+        rm -rf clang-toolchain/*
         if [[ "${CLANG_URL}" == *.tar.zst ]]; then
             wget -qO- "${CLANG_URL}" | tar -I zstd -xf - -C clang-toolchain || return 1
         else
             wget -qO- "${CLANG_URL}" | tar -xzf - -C clang-toolchain || return 1
         fi
+        echo "${CLANG_URL}" > "${url_marker}"
     fi
     [ -x "clang-toolchain/bin/clang" ] || return 1
 }
