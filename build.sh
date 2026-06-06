@@ -286,6 +286,10 @@ else
     make "${MAKE_ARGS[@]}" "${DEFCONFIG}" 2>&1 | tee -a "${BUILD_LOG}" || error "Defconfig step failed"
 fi
 
+# Override CONFIG_LOCALVERSION
+info "Setting CONFIG_LOCALVERSION=-Singularity"
+scripts/config --file out/.config --set-str CONFIG_LOCALVERSION "-Singularity"
+
 # LTO Optimization
 if [ "${LTO}" -eq 1 ]; then
     info "Enabling Thin LTO"
