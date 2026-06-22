@@ -1,4 +1,4 @@
-# 🌌 SkyWarp Kernel Builder
+# 🌌 Singularity Kernel Builder
 
 <p align="center">
   <img src="https://img.shields.io/badge/Kernel-SkyWarp-blueviolet?style=for-the-badge&logo=linux" alt="Kernel Name">
@@ -9,7 +9,7 @@
 ---
 
 ### 🚀 Overview
-**SkyWarp** is a high-performance, automated kernel building environment designed for efficiency and simplicity. This repository contains the core scripts and configurations required to compile the SkyWarp kernel with modern toolchains and optimizations.
+**Singularity** is a high-performance, automated kernel building environment designed for efficiency and simplicity. This repository contains the core scripts and configurations required to compile the SkyWarp kernel with modern toolchains and optimizations.
 
 ### ✨ Key Features
 - 🛠️ **Modern Toolchains**: Powered by the latest AOSP Clang and GCC cross-compilers.
