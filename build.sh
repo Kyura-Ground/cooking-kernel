@@ -380,6 +380,7 @@ send_telegram() {
 
         local msg="build succeeded in ${h}h ${m}m ${s}s
 Device: <code>X00TD</code>
+Branch: <code>${KERNEL_BRANCH}</code>
 md5: <code>${md5}</code>
 Compiler: ${compiler_ver}"
 
