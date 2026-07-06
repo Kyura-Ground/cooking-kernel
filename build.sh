@@ -42,7 +42,7 @@ KERNEL_REPO="${KERNEL_REPO:-https://github.com/Kyura-Ground/android_kernel_asus_
 DEFCONFIG="${DEFCONFIG:-vendor/asus/X00TD_defconfig}"
 ANYKERNEL_REPO="${ANYKERNEL_REPO:-https://github.com/Kyura-Ground/AnyKernel3}"
 ANYKERNEL_BRANCH="${ANYKERNEL_BRANCH:-4.19}"
-BUILD_KSU="${BUILD_KSU:-0}" # Set to 1 to enable KernelSU, 0 to disable
+BUILD_KSU="${BUILD_KSU:-1}" # Set to 1 to enable KernelSU, 0 to disable
 KBUILD_BUILD_USER="${KBUILD_BUILD_USER:-Kyura}"
 KBUILD_BUILD_HOST="${KBUILD_BUILD_HOST:-github}"
 CLANG_VERSION="${CLANG_VERSION:-1}" # 1: Clang r596125, 2: Clang 20 (r547379), 3: PurrrsLitterbox LLVM
@@ -378,9 +378,15 @@ send_telegram() {
         local compiler_ver
         compiler_ver=$(clang --version | perl -pe 's/\(http.*?\)//gs' | sed 's/[[:space:]]*$//' | head -n 1)
 
+        local ksu_status="Disabled"
+        if [ "${BUILD_KSU}" -eq 1 ]; then
+            ksu_status="Enabled"
+        fi
+
         local msg="build succeeded in ${h}h ${m}m ${s}s
 Device: <code>X00TD</code>
 Branch: <code>${KERNEL_BRANCH}</code>
+KernelSU: <code>${ksu_status}</code>
 md5: <code>${md5}</code>
 Compiler: ${compiler_ver}"
 
