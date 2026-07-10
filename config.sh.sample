@@ -4,7 +4,7 @@ KERNEL_BRANCH="lineage-23.2"
 DEFCONFIG="vendor/asus/X00TD_defconfig"
 
 # Toolchain
-CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/192fe0d378bb9cd4d4271de3e87145a1956fef40/clang-r536225.tar.gz"
+CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/ebcc6c3bef363bc539ea39f45b6abae1dce6ff1a/clang-r574158.tar.gz"
 
 # Build options
 BUILD_KSU=0
