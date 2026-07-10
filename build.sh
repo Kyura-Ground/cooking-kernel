@@ -38,18 +38,13 @@ error() {
 # Defaults (fallback)
 KERNEL_NAME="${KERNEL_NAME:-perf Kernel}"
 KERNEL_REPO="${KERNEL_REPO:-https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19}"
-    KERNEL_BRANCH="${KERNEL_BRANCH:-lineage-23.2}"
+KERNEL_BRANCH="${KERNEL_BRANCH:-lineage-23.2}"
 DEFCONFIG="${DEFCONFIG:-vendor/asus/X00TD_defconfig}"
 ANYKERNEL_REPO="${ANYKERNEL_REPO:-https://github.com/Kyura-Ground/AnyKernel3}"
 ANYKERNEL_BRANCH="${ANYKERNEL_BRANCH:-4.19}"
 BUILD_KSU="${BUILD_KSU:-1}" # Set to 1 to enable KernelSU, 0 to disable
 KBUILD_BUILD_USER="${KBUILD_BUILD_USER:-Kyura}"
 KBUILD_BUILD_HOST="${KBUILD_BUILD_HOST:-github}"
-CLANG_VERSION="${CLANG_VERSION:-1}" # 1: Clang r596125, 2: Clang 20 (r547379), 3: PurrrsLitterbox LLVM
-CLANG_URL_1="${CLANG_URL_1:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/8b6826407e25a197d7cf7ceacab0bf67c11173de/clang-r596125.tar.gz}"
-CLANG_URL_2="${CLANG_URL_2:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/62cdcefa89e31af2d72c366e8b5ef8db84caea62/clang-r547379.tar.gz}"
-CLANG_URL_3="${CLANG_URL_3:-https://github.com/PurrrsLitterbox/LLVM-stable/releases/download/llvmorg-22.1.2/clang.tar.zst}"
-
 # Load custom config if exists (overrides defaults)
 if [ -f "config.sh" ]; then
     info "Using custom config from config.sh"
@@ -58,14 +53,8 @@ if [ -f "config.sh" ]; then
 fi
 
 # Toolchain (Clang) URL
-if [ -z "${CLANG_URL:-}" ]; then
-    case "${CLANG_VERSION}" in
-        1) CLANG_URL="${CLANG_URL_1}" ;;
-        2) CLANG_URL="${CLANG_URL_2}" ;;
-        3) CLANG_URL="${CLANG_URL_3}" ;;
-        *) error "Unsupported CLANG_VERSION: ${CLANG_VERSION}" ;;
-    esac
-fi
+CLANG_URL="${CLANG_URL:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/192fe0d378bb9cd4d4271de3e87145a1956fef40/clang-r536225.tar.gz}"
+
 
 # Build Options
 USE_CCACHE="${USE_CCACHE:-1}"
