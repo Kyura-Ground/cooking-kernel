@@ -14,7 +14,7 @@
 ### ✨ Key Features
 - 🛠️ **Modern Toolchains**: Powered by the latest AOSP Clang and GCC cross-compilers.
 - ⚡ **Concurrent Setup**: Parallelized environment preparation for lightning-fast build starts.
-- 🛡️ **KernelSU Integration**: Native support for KernelSU-Next integration.
+- 🛡️ **KernelSU Integration**: Native support for backslashxx KernelSU integration.
 - 📦 **Automated Packaging**: Seamless integration with AnyKernel3 for flashable ZIP generation.
 - 🖋️ **Zip Signing**: Automatic signing of build artifacts for security and compatibility.
 - 📢 **Instant Notifications**: Real-time build status updates via Telegram.
@@ -32,9 +32,9 @@ The builder is designed to be modular. Customize your build by editing `config.s
 
 ```bash
 # Example config.sh
-KERNEL_REPO="https://github.com/user/stone-sky-tree"
-KERNEL_BRANCH="main"
-DEFCONFIG="vendor/device_defconfig"
+KERNEL_REPO="https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19"
+KERNEL_BRANCH="lineage-23.2"
+DEFCONFIG="vendor/asus/X00TD_defconfig"
 
 # Build options
 BUILD_KSU=1
@@ -53,8 +53,8 @@ bash build.sh
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `KERNEL_REPO` | Source repository for the kernel | (Asus SDM660) |
-| `KERNEL_BRANCH` | Git branch to compile | `SkyWarp` |
+| `KERNEL_REPO` | Source repository for the kernel | `https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19` |
+| `KERNEL_BRANCH` | Git branch to compile | `lineage-23.2` |
 | `DEFCONFIG` | Device-specific configuration file | `vendor/asus/X00TD_defconfig` |
 | `USE_LLVM` | Build using LLVM/Clang | `1` |
 | `BUILD_KSU` | Enable KernelSU integration | `1` |
@@ -64,7 +64,7 @@ bash build.sh
 
 ### 🤝 Acknowledgments
 - **AnyKernel3** by [osm0sis](https://github.com/osm0sis)
-- **KernelSU** by [tiann](https://github.com/tiann)
+- **KernelSU** by [backslashxx](https://github.com/backslashxx/KernelSU)
 - **GCC Toolchains** by [mvaisakh](https://github.com/mvaisakh)
 
 <p align="center">

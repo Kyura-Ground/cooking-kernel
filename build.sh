@@ -33,41 +33,43 @@ error() {
 }
 
 # ──────────────────────────────────────────
-# Configuration
+# Configuration Defaults (fallback)
 # ──────────────────────────────────────────
-# Defaults (fallback)
-KERNEL_NAME="${KERNEL_NAME:-perf Kernel}"
 KERNEL_REPO="${KERNEL_REPO:-https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19}"
 KERNEL_BRANCH="${KERNEL_BRANCH:-lineage-23.2}"
 DEFCONFIG="${DEFCONFIG:-vendor/asus/X00TD_defconfig}"
-ANYKERNEL_REPO="${ANYKERNEL_REPO:-https://github.com/Kyura-Ground/AnyKernel3}"
-ANYKERNEL_BRANCH="${ANYKERNEL_BRANCH:-4.19}"
-BUILD_KSU="${BUILD_KSU:-1}" # Set to 1 to enable KernelSU, 0 to disable
-KBUILD_BUILD_USER="${KBUILD_BUILD_USER:-Kyura}"
-KBUILD_BUILD_HOST="${KBUILD_BUILD_HOST:-github}"
-# Load custom config if exists (overrides defaults)
-if [ -f "config.sh" ]; then
-    info "Using custom config from config.sh"
-    # shellcheck source=/dev/null
-    source config.sh
-fi
 
-# Toolchain (Clang) URL
+# Toolchains
 CLANG_URL="${CLANG_URL:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/af3fae2c8e67673c43217d0cf75dbf3f268de272/clang-r596125.tar.gz}"
 
-
-# Build Options
-USE_CCACHE="${USE_CCACHE:-1}"
-USE_LLVM="${USE_LLVM:-1}"
-USE_LLVM_IAS="${USE_LLVM_IAS:-1}"
-LTO="${LTO:-1}" # 0: Default, 1: Thin, 2: Full (if supported)
-
-# Toolchain (GCC Cross Compiler) logic
 USE_GCC_CROSS="${USE_GCC_CROSS:-1}" # Set to 1 to use Clang x GCC 11.2.1
 GCC_64_REPO="${GCC_64_REPO:-https://github.com/mvaisakh/gcc-arm64}"
 GCC_64_BRANCH="${GCC_64_BRANCH:-gcc-new}"
 GCC_32_REPO="${GCC_32_REPO:-https://github.com/mvaisakh/gcc-arm}"
 GCC_32_BRANCH="${GCC_32_BRANCH:-gcc-new}"
+
+# Build Options
+BUILD_KSU="${BUILD_KSU:-1}" # Set to 1 to enable KernelSU, 0 to disable
+USE_CCACHE="${USE_CCACHE:-1}"
+USE_LLVM="${USE_LLVM:-1}"
+USE_LLVM_IAS="${USE_LLVM_IAS:-1}"
+LTO="${LTO:-1}" # 0: Default, 1: Thin, 2: Full (if supported)
+
+KBUILD_BUILD_USER="${KBUILD_BUILD_USER:-Kyura}"
+KBUILD_BUILD_HOST="${KBUILD_BUILD_HOST:-github}"
+
+# AnyKernel3
+ANYKERNEL_REPO="${ANYKERNEL_REPO:-https://github.com/Kyura-Ground/AnyKernel3}"
+ANYKERNEL_BRANCH="${ANYKERNEL_BRANCH:-4.19}"
+
+# ──────────────────────────────────────────
+# Load Custom Config (Overrides Defaults)
+# ──────────────────────────────────────────
+if [ -f "config.sh" ]; then
+    info "Using custom config from config.sh"
+    # shellcheck source=/dev/null
+    source config.sh
+fi
 
 # Export build environment
 export ARCH=arm64
@@ -79,6 +81,7 @@ WORKDIR=$(pwd)
 LOG_DIR="${WORKDIR}/logs"
 mkdir -p "${LOG_DIR}"
 BUILD_LOG="${LOG_DIR}/build_$(date +'%Y%m%d_%H%M').log"
+ZIPSIGNER_JAR="${WORKDIR}/zipsigner-3.0-dexed.jar"
 
 JOBS=$(nproc --all)
 BUILD_START=$(date +%s)
@@ -153,7 +156,7 @@ setup_anykernel() {
     fi
 }
 
-# Task 5: Fetch GCC 64-bit
+# Task 4: Fetch GCC 64-bit
 setup_gcc_64() {
     if [ "${USE_GCC_CROSS}" -eq 1 ] && [ ! -d "gcc-arm64" ]; then
         info "Cloning GCC ARM64 (CROSS_COMPILE)"
@@ -161,7 +164,7 @@ setup_gcc_64() {
     fi
 }
 
-# Task 6: Fetch GCC 32-bit
+# Task 5: Fetch GCC 32-bit
 setup_gcc_32() {
     if [ "${USE_GCC_CROSS}" -eq 1 ] && [ ! -d "gcc-arm32" ]; then
         info "Cloning GCC ARM32 (CROSS_COMPILE_ARM32)"
@@ -169,9 +172,8 @@ setup_gcc_32() {
     fi
 }
 
-# Task 4: Fetch ZipSigner
+# Task 6: Fetch ZipSigner
 setup_zipsigner() {
-    ZIPSIGNER_JAR="${WORKDIR}/zipsigner-3.0-dexed.jar"
     if [ ! -f "${ZIPSIGNER_JAR}" ]; then
         info "Downloading ZipSigner"
         wget -qO "${ZIPSIGNER_JAR}" "https://github.com/Magisk-Modules-Repo/zipsigner/raw/master/bin/zipsigner-3.0-dexed.jar" || return 1
@@ -181,8 +183,10 @@ setup_zipsigner() {
 # Run tasks in background
 setup_kernel & PID_KERNEL=$!
 setup_clang & PID_KERNEL_CLANG=$!
-setup_gcc_64 & PID_GCC_64=$!
-setup_gcc_32 & PID_GCC_32=$!
+if [ "${USE_GCC_CROSS}" -eq 1 ]; then
+    setup_gcc_64 & PID_GCC_64=$!
+    setup_gcc_32 & PID_GCC_32=$!
+fi
 setup_anykernel & PID_ANYKERNEL=$!
 setup_zipsigner & PID_ZIPSIGNER=$!
 
@@ -332,7 +336,6 @@ mv "${ZIP_NAME}" out-zip/
 wait "${PID_ZIPSIGNER}" || error "ZipSigner download failed"
 
 info "Signing ZIP with ZipSigner"
-ZIPSIGNER_JAR="${WORKDIR}/zipsigner-3.0-dexed.jar"
 if [ ! -f "${ZIPSIGNER_JAR}" ]; then
     error "ZipSigner JAR not found at ${ZIPSIGNER_JAR}"
 fi
@@ -392,15 +395,19 @@ Compiler: ${compiler_ver}"
             info "Telegram upload failed. Response: ${tg_resp:-<empty>}"
         fi
     fi
-
-    send_pixeldrain
 }
 
 send_pixeldrain() {
-    [ -z "${PIXELDRAIN_API_KEY}" ] && { info "Pixeldrain API key not set, skipping fallback."; return 0; }
+    local zip_path="out-zip/${ZIP_NAME}"
+    if [ ! -f "${zip_path}" ]; then
+        info "Pixeldrain upload skipped: ZIP not found at ${zip_path}"
+        return 0
+    fi
+
+    [ -z "${PIXELDRAIN_API_KEY:-}" ] && { info "Pixeldrain API key not set, skipping fallback."; return 0; }
     
     info "Uploading to Pixeldrain"
-    curl -sS -T "out-zip/${ZIP_NAME}" -u :"${PIXELDRAIN_API_KEY}" https://pixeldrain.com/api/file/
+    curl -sS -T "${zip_path}" -u :"${PIXELDRAIN_API_KEY:-}" https://pixeldrain.com/api/file/
     echo ""
 }
 
@@ -408,4 +415,5 @@ send_pixeldrain() {
 # Finalize
 # ──────────────────────────────────────────
 send_telegram
+send_pixeldrain
 success "Done!"
