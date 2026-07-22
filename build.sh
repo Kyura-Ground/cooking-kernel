@@ -36,7 +36,7 @@ error() {
 # Configuration Defaults (fallback)
 # ──────────────────────────────────────────
 KERNEL_REPO="${KERNEL_REPO:-https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19}"
-KERNEL_BRANCH="${KERNEL_BRANCH:-rsuntk}"
+KERNEL_BRANCH="${KERNEL_BRANCH:-lineage-23.2}"
 DEFCONFIG="${DEFCONFIG:-vendor/asus/X00TD_defconfig}"
 
 # Toolchains
