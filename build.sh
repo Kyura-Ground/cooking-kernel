@@ -274,7 +274,7 @@ fi
 
 info "Executing defconfig..."
 if [ "${BUILD_KSU}" -eq 1 ]; then
-    make "${MAKE_ARGS[@]}" "${DEFCONFIG}" vendor/extra/xxksu.config 2>&1 | tee -a "${BUILD_LOG}" || error "Defconfig step failed"
+    make "${MAKE_ARGS[@]}" "${DEFCONFIG}" vendor/extra/ksu.config 2>&1 | tee -a "${BUILD_LOG}" || error "Defconfig step failed"
 else
     make "${MAKE_ARGS[@]}" "${DEFCONFIG}" 2>&1 | tee -a "${BUILD_LOG}" || error "Defconfig step failed"
 fi
