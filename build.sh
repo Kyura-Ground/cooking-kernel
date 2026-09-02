@@ -218,7 +218,7 @@ fi
 
 if [ "${BUILD_KSU}" -eq 1 ]; then
     info "Setting up KernelSU"
-    curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash || error "KernelSU setup failed"
+    curl -LSs "https://raw.githubusercontent.com/backslashxx/KernelSU/master/kernel/setup.sh" | bash -s master || error "KernelSU setup failed"
 else
     info "KernelSU disabled"
 fi
