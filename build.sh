@@ -37,7 +37,7 @@ error() {
 # ──────────────────────────────────────────
 KERNEL_REPO="${KERNEL_REPO:-https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19}"
 KERNEL_BRANCH="${KERNEL_BRANCH:-lineage-23.2}"
-DEFCONFIG="${DEFCONFIG:-vendor/asus/X00TD_defconfig}"
+DEFCONFIG="${DEFCONFIG:-vendor/X00TD.config}"
 
 # Toolchains
 CLANG_URL="${CLANG_URL:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/af3fae2c8e67673c43217d0cf75dbf3f268de272/clang-r596125.tar.gz}"
@@ -274,9 +274,9 @@ fi
 
 info "Executing defconfig..."
 if [ "${BUILD_KSU}" -eq 1 ]; then
-    make "${MAKE_ARGS[@]}" "${DEFCONFIG}" vendor/extra/ksu.config 2>&1 | tee -a "${BUILD_LOG}" || error "Defconfig step failed"
+    make "${MAKE_ARGS[@]}" "${DEFCONFIG}" vendor/common.config vendor/extra/ksu.config 2>&1 | tee -a "${BUILD_LOG}" || error "Defconfig step failed"
 else
-    make "${MAKE_ARGS[@]}" "${DEFCONFIG}" 2>&1 | tee -a "${BUILD_LOG}" || error "Defconfig step failed"
+    make "${MAKE_ARGS[@]}" "${DEFCONFIG}" vendor/common.config 2>&1 | tee -a "${BUILD_LOG}" || error "Defconfig step failed"
 fi
 
 # Override CONFIG_LOCALVERSION
