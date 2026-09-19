@@ -15,6 +15,7 @@
 - 🛠️ **Modern Toolchains**: Powered by the latest AOSP Clang and GCC cross-compilers.
 - ⚡ **Concurrent Setup**: Parallelized environment preparation for lightning-fast build starts.
 - 🛡️ **KernelSU Integration**: Native support for backslashxx KernelSU integration.
+- 🗂️ **NoMount Integration**: Native support for maxsteeel NoMount path redirection.
 - 📦 **Automated Packaging**: Seamless integration with AnyKernel3 for flashable ZIP generation.
 - 🖋️ **Zip Signing**: Automatic signing of build artifacts for security and compatibility.
 - 📢 **Instant Notifications**: Real-time build status updates via Telegram.
@@ -33,11 +34,12 @@ The builder is designed to be modular. Customize your build by editing `config.s
 ```bash
 # Example config.sh
 KERNEL_REPO="https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19"
-KERNEL_BRANCH="lineage-23.2"
+KERNEL_BRANCH="lineage-24.0"
 DEFCONFIG="vendor/asus/X00TD_defconfig"
 
 # Build options
 BUILD_KSU=1
+BUILD_NOMOUNT=1
 LTO=1 # 0: Default, 1: Thin, 2: Full
 ```
 
@@ -54,10 +56,11 @@ bash build.sh
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `KERNEL_REPO` | Source repository for the kernel | `https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19` |
-| `KERNEL_BRANCH` | Git branch to compile | `lineage-23.2` |
+| `KERNEL_BRANCH` | Git branch to compile | `lineage-24.0` |
 | `DEFCONFIG` | Device-specific configuration file | `vendor/asus/X00TD_defconfig` |
 | `USE_LLVM` | Build using LLVM/Clang | `1` |
 | `BUILD_KSU` | Enable KernelSU integration | `1` |
+| `BUILD_NOMOUNT` | Enable NoMount integration | `1` |
 | `LTO` | Link Time Optimization level | `1` |
 
 ---
