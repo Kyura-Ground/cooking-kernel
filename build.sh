@@ -36,7 +36,7 @@ error() {
 # Configuration Defaults (fallback)
 # ──────────────────────────────────────────
 KERNEL_REPO="${KERNEL_REPO:-https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19}"
-KERNEL_BRANCH="${KERNEL_BRANCH:-lineage-23.2}"
+KERNEL_BRANCH="${KERNEL_BRANCH:-lineage-24.0}"
 DEFCONFIG="${DEFCONFIG:-vendor/sdm660-perf_defconfig}"
 
 # Toolchains
@@ -50,6 +50,7 @@ GCC_32_BRANCH="${GCC_32_BRANCH:-gcc-master}"
 
 # Build Options
 BUILD_KSU="${BUILD_KSU:-1}" # Set to 1 to enable KernelSU, 0 to disable
+BUILD_NOMOUNT="${BUILD_NOMOUNT:-1}" # Set to 1 to enable NoMount, 0 to disable
 USE_CCACHE="${USE_CCACHE:-1}"
 USE_LLVM="${USE_LLVM:-1}"
 USE_LLVM_IAS="${USE_LLVM_IAS:-1}"
@@ -223,6 +224,13 @@ else
     info "KernelSU disabled"
 fi
 
+if [ "${BUILD_NOMOUNT}" -eq 1 ]; then
+    info "Setting up NoMount"
+    curl -LSs "https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh" | bash - || error "NoMount setup failed"
+else
+    info "NoMount disabled"
+fi
+
 # ──────────────────────────────────────────
 # Build Process
 # ──────────────────────────────────────────
@@ -375,10 +383,16 @@ send_telegram() {
             ksu_status="Enabled"
         fi
 
+        local nomount_status="Disabled"
+        if [ "${BUILD_NOMOUNT}" -eq 1 ]; then
+            nomount_status="Enabled"
+        fi
+
         local msg="build succeeded in ${h}h ${m}m ${s}s
 Device: <code>X00TD</code>
 Branch: <code>${KERNEL_BRANCH}</code>
 KernelSU: <code>${ksu_status}</code>
+NoMount: <code>${nomount_status}</code>
 md5: <code>${md5}</code>
 Compiler: ${compiler_ver}"
 
