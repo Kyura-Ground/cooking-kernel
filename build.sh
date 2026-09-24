@@ -35,7 +35,7 @@ error() {
 # ──────────────────────────────────────────
 # Configuration Defaults (fallback)
 # ──────────────────────────────────────────
-KERNEL_REPO="${KERNEL_REPO:-https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19}"
+KERNEL_REPO="${KERNEL_REPO:-https://github.com/Kyura-Ground/android_kernel_asus_sdm660}"
 KERNEL_BRANCH="${KERNEL_BRANCH:-lineage-24.0}"
 DEFCONFIG="${DEFCONFIG:-vendor/sdm660-perf_defconfig}"
 
