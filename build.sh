@@ -1,362 +1,289 @@
-#!/bin/bash
-# Kernel builder for CircleCI — X00TD
-set -euo pipefail
+#!/usr/bin/env bash
+# X00TD / LineageOS 20 / Linux 4.4 builder.
+set -Eeuo pipefail
 
-# Set Timezone to WIB
-export TZ="Asia/Jakarta"
-echo "Build started at: $(date) (Timezone: $TZ)"
+ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+cd "$ROOT"
 
-# ──────────────────────────────────────────
-# Functions
-# ──────────────────────────────────────────
-info() { echo -e "\e[1;34m[$(date +%T)] --- $1 ---\e[0m"; }
-success() { echo -e "\e[1;32m[$(date +%T)] ✅ $1\e[0m"; }
-error() {
-    echo -e "\e[1;31m[$(date +%T)] ❌ $1\e[0m"
-    if [ -n "${TG_BOT_TOKEN:-}" ] && [ -n "${TG_CHAT_ID:-}" ]; then
-        local tg_msg="❌ <b>Build Failed!</b>
-<b>Error:</b> $1"
-        if [ -n "${BUILD_LOG:-}" ] && [ -f "${BUILD_LOG}" ]; then
-            curl -sS -m 300 -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" \
-                -F chat_id="${TG_CHAT_ID}" \
-                -F document=@"${BUILD_LOG}" \
-                -F parse_mode="HTML" \
-                -F caption="${tg_msg}" >/dev/null 2>&1 || true
-        else
-            curl -sS -m 300 -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
-                -d chat_id="${TG_CHAT_ID}" \
-                -d parse_mode="HTML" \
-                -d text="${tg_msg}" >/dev/null 2>&1 || true
-        fi
-    fi
-    exit 1
-}
-
-# ──────────────────────────────────────────
-# Configuration Defaults (fallback)
-# ──────────────────────────────────────────
-KERNEL_REPO="${KERNEL_REPO:-https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.19}"
-KERNEL_BRANCH="${KERNEL_BRANCH:-lineage-24.0}"
-DEFCONFIG="${DEFCONFIG:-vendor/asus/X00TD_defconfig}"
-
-# Toolchains
-CLANG_URL="${CLANG_URL:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/af3fae2c8e67673c43217d0cf75dbf3f268de272/clang-r596125.tar.gz}"
-
-USE_GCC_CROSS="${USE_GCC_CROSS:-1}" # Set to 1 to use Clang x GCC 11.2.1
-GCC_64_REPO="${GCC_64_REPO:-https://github.com/mvaisakh/gcc-arm64}"
-GCC_64_BRANCH="${GCC_64_BRANCH:-gcc-master}"
-GCC_32_REPO="${GCC_32_REPO:-https://github.com/mvaisakh/gcc-arm}"
-GCC_32_BRANCH="${GCC_32_BRANCH:-gcc-master}"
-
-# Build Options
-BUILD_KSU="${BUILD_KSU:-1}" # Set to 1 to enable KernelSU, 0 to disable
-BUILD_NOMOUNT="${BUILD_NOMOUNT:-1}" # Set to 1 to enable NoMount, 0 to disable
-USE_CCACHE="${USE_CCACHE:-1}"
-USE_LLVM="${USE_LLVM:-1}"
-USE_LLVM_IAS="${USE_LLVM_IAS:-1}"
-LTO="${LTO:-1}" # 0: Default, 1: Thin, 2: Full (if supported)
-
-KBUILD_BUILD_USER="${KBUILD_BUILD_USER:-Kyura}"
-KBUILD_BUILD_HOST="${KBUILD_BUILD_HOST:-github}"
-
-# AnyKernel3
+KERNEL_REPO="${KERNEL_REPO:-https://github.com/Kyura-Ground/android_kernel_asus_sdm660}"
+KERNEL_BRANCH="${KERNEL_BRANCH:-lineage-20}"
+DEFCONFIG="${DEFCONFIG:-X00TD_defconfig}"
+CLANG_URL="${CLANG_URL:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/292044a13f9d1d6f42c15d56f92fe8e11e363ca0/clang-r450784d.tar.gz}"
+GCC_64_REPO="${GCC_64_REPO:-https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9}"
+GCC_64_REF="${GCC_64_REF:-5e030eafe024784a73cdf47e6936ac0dbfc763dc}"
+GCC_32_REPO="${GCC_32_REPO:-https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9}"
+GCC_32_REF="${GCC_32_REF:-111258a10e017f067b27e6cfcea7619d753f3309}"
+KSU_REPO="${KSU_REPO:-https://github.com/backslashxx/KernelSU}"
+KSU_REF="${KSU_REF:-a7f37595dcf067791fc2c689047a651c19d6704c}"
 ANYKERNEL_REPO="${ANYKERNEL_REPO:-https://github.com/Kyura-Ground/AnyKernel3}"
-ANYKERNEL_BRANCH="${ANYKERNEL_BRANCH:-4.19}"
+ANYKERNEL_BRANCH="${ANYKERNEL_BRANCH:-4.4}"
+BUILD_KSU="${BUILD_KSU:-1}"
+BUILD_NOMOUNT="${BUILD_NOMOUNT:-0}"
+SIGN_ZIP="${SIGN_ZIP:-1}"
+USE_CCACHE="${USE_CCACHE:-1}"
+LOCALVERSION="${LOCALVERSION:--Singularity}"
+KBUILD_BUILD_USER="${KBUILD_BUILD_USER:-Kyura}"
+KBUILD_BUILD_HOST="${KBUILD_BUILD_HOST:-circleci}"
+WORK_DIR="${WORK_DIR:-$ROOT}"
+JOBS="${JOBS:-$(nproc)}"
 
-# ──────────────────────────────────────────
-# Load Custom Config (Overrides Defaults)
-# ──────────────────────────────────────────
-if [ -f "config.sh" ]; then
-    info "Using custom config from config.sh"
+if [[ -f "$ROOT/config.sh" ]]; then
     # shellcheck source=/dev/null
-    source config.sh
+    source "$ROOT/config.sh"
 fi
 
-# Export build environment
-export ARCH=arm64
-export SUBARCH=arm64
-export KBUILD_BUILD_USER
-export KBUILD_BUILD_HOST
-
-WORKDIR=$(pwd)
-LOG_DIR="${WORKDIR}/logs"
-mkdir -p "${LOG_DIR}"
-BUILD_LOG="${LOG_DIR}/build_$(date +'%Y%m%d_%H%M').log"
-ZIPSIGNER_JAR="${WORKDIR}/zipsigner-3.0-dexed.jar"
-
-JOBS=$(nproc --all)
+export TZ="${TZ:-Asia/Jakarta}" ARCH=arm64 SUBARCH=arm64
+export KBUILD_BUILD_USER KBUILD_BUILD_HOST
+[[ $WORK_DIR == /* ]] || WORK_DIR="$ROOT/$WORK_DIR"
+mkdir -p "$WORK_DIR"
+WORK_DIR=$(cd "$WORK_DIR" && pwd)
+KERNEL_DIR="$WORK_DIR/kernel-src"
+OUT_DIR="$KERNEL_DIR/out"
+TOOLCHAIN_DIR="$WORK_DIR/.toolchains"
+LOG_DIR="$WORK_DIR/logs"
+ARTIFACT_DIR="$WORK_DIR/out-zip"
+mkdir -p "$LOG_DIR" "$ARTIFACT_DIR" "$TOOLCHAIN_DIR"
+BUILD_LOG="$LOG_DIR/build_$(date +%Y%m%d_%H%M%S).log"
 BUILD_START=$(date +%s)
+exec > >(tee "$BUILD_LOG") 2>&1
 
-# CCache Setup
-if [ "${USE_CCACHE}" -eq 1 ]; then
-    USE_CCACHE=1
-    export USE_CCACHE
-    CCACHE_DIR="${WORKDIR}/.ccache"
-    export CCACHE_DIR
-    CCACHE_EXEC=$(which ccache || true)
-    export CCACHE_EXEC
-    if [ -z "${CCACHE_EXEC}" ]; then
-        info "ccache not found, installing..."
-        sudo apt-get update -y && sudo apt-get install -y ccache
-        CCACHE_EXEC=$(which ccache)
-        export CCACHE_EXEC
+info() { printf '[%s] %s\n' "$(date +%T)" "$*"; }
+success() { info "$*"; }
+die() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
+
+finish() {
+    local status=$?
+    trap - EXIT
+    if [[ -f "$OUT_DIR/.config" ]]; then
+        cp "$OUT_DIR/.config" "$LOG_DIR/kernel.config"
     fi
-    info "Using ccache: ${CCACHE_EXEC}"
-    "${CCACHE_EXEC}" -M 10G
+    if (( status != 0 )); then
+        printf 'Build failed (exit %s). Log: %s\n' "$status" "$BUILD_LOG" >&2
+    fi
+    exit "$status"
+}
+trap finish EXIT
+
+# CircleCI booleans interpolate to true/false; environment overrides may use 1/0.
+normalize_bool() {
+    case "$2" in
+        1|true) printf -v "$1" '%s' 1 ;;
+        0|false) printf -v "$1" '%s' 0 ;;
+        *) die "$1 must be 1/0 or true/false" ;;
+    esac
+}
+normalize_bool BUILD_KSU "$BUILD_KSU"
+normalize_bool SIGN_ZIP "$SIGN_ZIP"
+normalize_bool USE_CCACHE "$USE_CCACHE"
+[[ $JOBS =~ ^[1-9][0-9]*$ ]] || die "JOBS must be a positive integer"
+[[ ${LTO:-0} == 0 ]] || die "This 4.4 builder does not enable LTO"
+[[ $BUILD_NOMOUNT == 0 ]] || die "NoMount is not configured for this 4.4 tree"
+
+for command in git make bc bison flex gcc g++ curl tar zip unzip sha256sum python3; do
+    command -v "$command" >/dev/null || die "Missing dependency: $command (see README)"
+done
+if (( SIGN_ZIP )); then
+    command -v java >/dev/null || die "SIGN_ZIP=1 requires java"
 fi
 
-# ──────────────────────────────────────────
-# Setup (Parallel)
-# ──────────────────────────────────────────
-info "Starting parallel setup tasks..."
-
-# Task 1: Clone kernel source
-setup_kernel() {
-    if [ ! -d "kernel-src" ]; then
-        info "Cloning Kernel Source"
-        git clone --depth=1 -b "${KERNEL_BRANCH}" "${KERNEL_REPO}" kernel-src || return 1
+# Cache only immutable toolchain revisions. Never stash/reset a user's worktree.
+checkout_repo() {
+    local repo=$1 ref=$2 dest=$3
+    if [[ -e "$dest" ]]; then
+        [[ -d "$dest/.git" ]] || die "$dest exists and is not a Git clone"
+        [[ $(git -C "$dest" remote get-url origin) == "$repo" ]] ||
+            die "Cached repository URL differs: $dest"
+        [[ -z $(git -C "$dest" status --porcelain) ]] ||
+            die "$dest has changes; move it aside before rebuilding"
+        if [[ $ref =~ ^[0-9a-f]{40}$ ]] &&
+            [[ $(git -C "$dest" rev-parse HEAD) == "$ref" ]]; then
+            return
+        fi
     else
-        info "Kernel source already exists, skipping clone"
+        git init -q "$dest"
+        git -C "$dest" remote add origin "$repo"
     fi
+    git -C "$dest" fetch --depth=1 --no-tags origin "$ref"
+    git -C "$dest" checkout --detach FETCH_HEAD
 }
 
-# Task 2: Fetch & extract Clang toolchain
 setup_clang() {
-    mkdir -p clang-toolchain
-    local url_marker="clang-toolchain/.clang-url"
-    local needs_download=0
-
-    if [ -f "${url_marker}" ]; then
-        if [ "$(cat "${url_marker}")" != "${CLANG_URL}" ]; then
-            needs_download=1
-        fi
-    else
-        needs_download=1
+    local dest="$TOOLCHAIN_DIR/clang"
+    if [[ -x "$dest/bin/clang" && -f "$dest/.source-url" ]] &&
+        [[ $(cat "$dest/.source-url") == "$CLANG_URL" ]]; then
+        return
     fi
-
-    if [ -x "clang-toolchain/bin/clang" ] && [ "${needs_download}" -eq 0 ]; then
-        info "Using cached Clang toolchain"
-    else
-        info "Downloading Clang Toolchain"
-        rm -rf clang-toolchain/*
-        if [[ "${CLANG_URL}" == *.tar.zst ]]; then
-            wget -qO- "${CLANG_URL}" | tar -I zstd -xf - -C clang-toolchain || return 1
-        else
-            wget -qO- "${CLANG_URL}" | tar -xzf - -C clang-toolchain || return 1
-        fi
-        echo "${CLANG_URL}" > "${url_marker}"
+    local staging
+    staging=$(mktemp -d "$TOOLCHAIN_DIR/.clang-download.XXXXXX")
+    curl --fail --location --retry 3 --connect-timeout 30 \
+        "$CLANG_URL" -o "$staging/clang.tar.gz"
+    mkdir "$staging/extracted"
+    tar -xzf "$staging/clang.tar.gz" -C "$staging/extracted"
+    [[ -x "$staging/extracted/bin/clang" ]] || die "Clang archive lacks bin/clang"
+    printf '%s\n' "$CLANG_URL" > "$staging/extracted/.source-url"
+    # dest is the builder-owned compiler cache, never the kernel checkout.
+    if [[ -e "$dest" ]]; then
+        mv "$dest" "$staging/previous"
     fi
-    [ -x "clang-toolchain/bin/clang" ] || return 1
+    mv "$staging/extracted" "$dest"
+    rm -rf -- "$staging"
 }
 
-# Task 3: Clone AnyKernel3
-setup_anykernel() {
-    if [ ! -d "anykernel" ]; then
-        info "Cloning AnyKernel3"
-        git clone --depth=1 -b "${ANYKERNEL_BRANCH}" "${ANYKERNEL_REPO}" anykernel || return 1
-    fi
-}
+info "Preparing Linux 4.4 source and toolchains"
+checkout_repo "$KERNEL_REPO" "$KERNEL_BRANCH" "$KERNEL_DIR"
+[[ -f "$KERNEL_DIR/arch/arm64/configs/$DEFCONFIG" ]] ||
+    die "Missing arch/arm64/configs/$DEFCONFIG"
+grep -Eq '^VERSION[[:space:]]*=[[:space:]]*4$' "$KERNEL_DIR/Makefile" &&
+    grep -Eq '^PATCHLEVEL[[:space:]]*=[[:space:]]*4$' "$KERNEL_DIR/Makefile" ||
+    die "Expected a Linux 4.4 kernel; check KERNEL_REPO/KERNEL_BRANCH"
 
-# Task 4: Fetch GCC 64-bit
-setup_gcc_64() {
-    if [ "${USE_GCC_CROSS}" -eq 1 ] && [ ! -d "gcc-arm64" ]; then
-        info "Cloning GCC ARM64 (CROSS_COMPILE)"
-        git clone --depth=1 -b "${GCC_64_BRANCH}" "${GCC_64_REPO}" gcc-arm64 || return 1
-    fi
-}
+setup_clang
+checkout_repo "$GCC_64_REPO" "$GCC_64_REF" "$TOOLCHAIN_DIR/gcc-arm64"
+checkout_repo "$GCC_32_REPO" "$GCC_32_REF" "$TOOLCHAIN_DIR/gcc-arm32"
+export PATH="$TOOLCHAIN_DIR/clang/bin:$TOOLCHAIN_DIR/gcc-arm64/bin:$TOOLCHAIN_DIR/gcc-arm32/bin:$PATH"
+for command in clang aarch64-linux-android-gcc aarch64-linux-android-ld \
+    aarch64-linux-android-elfedit arm-linux-androideabi-gcc arm-linux-androideabi-ld; do
+    command -v "$command" >/dev/null || die "Toolchain is incomplete: $command"
+done
 
-# Task 5: Fetch GCC 32-bit
-setup_gcc_32() {
-    if [ "${USE_GCC_CROSS}" -eq 1 ] && [ ! -d "gcc-arm32" ]; then
-        info "Cloning GCC ARM32 (CROSS_COMPILE_ARM32)"
-        git clone --depth=1 -b "${GCC_32_BRANCH}" "${GCC_32_REPO}" gcc-arm32 || return 1
-    fi
-}
-
-# Task 6: Fetch ZipSigner
-setup_zipsigner() {
-    if [ ! -f "${ZIPSIGNER_JAR}" ]; then
-        info "Downloading ZipSigner"
-        wget -qO "${ZIPSIGNER_JAR}" "https://github.com/Magisk-Modules-Repo/zipsigner/raw/master/bin/zipsigner-3.0-dexed.jar" || return 1
-    fi
-}
-
-# Run tasks in background
-setup_kernel & PID_KERNEL=$!
-setup_clang & PID_KERNEL_CLANG=$!
-if [ "${USE_GCC_CROSS}" -eq 1 ]; then
-    setup_gcc_64 & PID_GCC_64=$!
-    setup_gcc_32 & PID_GCC_32=$!
+MAKE_ARGS=(
+    -C "$KERNEL_DIR" O="$OUT_DIR" ARCH=arm64 SUBARCH=arm64
+    CROSS_COMPILE=aarch64-linux-android-
+    CROSS_COMPILE_ARM32=arm-linux-androideabi-
+    CLANG_TRIPLE=aarch64-linux-gnu-
+    CLANG_TRIPLE_ARM32=arm-linux-gnueabi-
+    LLVM_IAS=0 HOSTCC=gcc HOSTCXX=g++
+)
+if (( USE_CCACHE )); then
+    command -v ccache >/dev/null || die "USE_CCACHE=1 requires ccache"
+    export CCACHE_DIR="$WORK_DIR/.ccache"
+    ccache --max-size "${CCACHE_MAXSIZE:-5G}"
+    MAKE_ARGS+=("CC=ccache clang")
+else
+    MAKE_ARGS+=(CC=clang)
 fi
-setup_anykernel & PID_ANYKERNEL=$!
-setup_zipsigner & PID_ZIPSIGNER=$!
+# Keep GNU 4.9 binutils selected by CROSS_COMPILE; LLVM=1 is not supported here.
 
-# Wait for essential tasks before build
-wait "${PID_KERNEL}" || error "Kernel source setup failed"
-wait "${PID_KERNEL_CLANG}" || error "Clang toolchain setup failed"
-if [ "${USE_GCC_CROSS}" -eq 1 ]; then
-    wait "${PID_GCC_64}" || error "GCC 64-bit setup failed"
-    wait "${PID_GCC_32}" || error "GCC 32-bit setup failed"
-    export PATH="${WORKDIR}/gcc-arm64/bin:${WORKDIR}/gcc-arm32/bin:${PATH}"
-fi
-
-export PATH="${WORKDIR}/clang-toolchain/bin:${PATH}"
-
-# ──────────────────────────────────────────
-# Build Preparation
-# ──────────────────────────────────────────
-cd kernel-src || error "Kernel source directory not found"
-
-# Patching mechanism
-if [ -d "${WORKDIR}/patches" ]; then
-    info "Applying patches"
-    for patch in "${WORKDIR}/patches"/*.patch; do
-        [ -f "$patch" ] || continue
-        info "Applying: $(basename "$patch")"
-        patch -p1 < "$patch" || error "Failed to apply $patch"
+if [[ -d "$ROOT/patches" ]]; then
+    for patch in "$ROOT/patches/"*.patch; do
+        [[ -f "$patch" ]] || continue
+        info "Applying $(basename "$patch")"
+        git -C "$KERNEL_DIR" apply --check "$patch"
+        git -C "$KERNEL_DIR" apply "$patch"
     done
 fi
 
-if [ "${BUILD_KSU}" -eq 1 ]; then
-    info "Setting up KernelSU"
-    curl -LSs "https://raw.githubusercontent.com/backslashxx/KernelSU/master/kernel/setup.sh" | bash -s master || error "KernelSU setup failed"
-else
-    info "KernelSU disabled"
+if (( BUILD_KSU )); then
+    info "Integrating KernelSU at $KSU_REF"
+    checkout_repo "$KSU_REPO" "$KSU_REF" "$KERNEL_DIR/KernelSU"
+    [[ -f "$KERNEL_DIR/KernelSU/kernel/Kconfig" ]] || die "KernelSU Kconfig missing"
+    [[ ! -e "$KERNEL_DIR/drivers/kernelsu" && ! -L "$KERNEL_DIR/drivers/kernelsu" ]] ||
+        die "Source already has drivers/kernelsu; use a fresh kernel-src"
+    ln -s ../KernelSU/kernel "$KERNEL_DIR/drivers/kernelsu"
+    printf '\nobj-$(CONFIG_KSU) += kernelsu/\n' >> "$KERNEL_DIR/drivers/Makefile"
+    printf '\nsource "drivers/kernelsu/Kconfig"\n' >> "$KERNEL_DIR/drivers/Kconfig"
 fi
 
-if [ "${BUILD_NOMOUNT}" -eq 1 ]; then
-    info "Setting up NoMount"
-    curl -LSs "https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh" | bash - || error "NoMount setup failed"
-else
-    info "NoMount disabled"
-fi
-
-# ──────────────────────────────────────────
-# Build Process
-# ──────────────────────────────────────────
-info "🚀 Starting Kernel Build..."
-
-# Compiler Selection
-MAKE_ARGS=(
-    O=out
-    ARCH="${ARCH}"
-    SUBARCH="${SUBARCH}"
-)
-
-if [ "${USE_GCC_CROSS}" -eq 1 ]; then
-    info "Using Clang x GCC Cross Compile"
-    MAKE_ARGS+=(
-        CROSS_COMPILE="aarch64-elf-"
-        CROSS_COMPILE_ARM32="arm-eabi-"
-        LD="ld.lld"
-        AR="llvm-ar"
-        NM="llvm-nm"
-        OBJCOPY="llvm-objcopy"
-        OBJDUMP="llvm-objdump"
-        STRIP="llvm-strip"
+mkdir -p "$OUT_DIR"
+make "${MAKE_ARGS[@]}" "$DEFCONFIG"
+if (( BUILD_KSU )); then
+    (
+        cd "$KERNEL_DIR"
+        scripts/kconfig/merge_config.sh -m -O "$OUT_DIR" \
+            "$OUT_DIR/.config" "$ROOT/configs/ksu.config"
     )
-    if [ "${USE_CCACHE}" -eq 1 ]; then
-        MAKE_ARGS+=( CC="ccache clang" HOSTCC="ccache gcc" )
-    else
-        MAKE_ARGS+=( CC="clang" HOSTCC="gcc" )
-    fi
-else
-    if [ "${USE_LLVM}" -eq 1 ]; then
-        MAKE_ARGS+=(
-            LLVM=1
-        )
-        if [ "${USE_LLVM_IAS}" -eq 1 ]; then
-            MAKE_ARGS+=(
-                LLVM_IAS=1
-            )
+fi
+"$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
+    --set-str LOCALVERSION "$LOCALVERSION" --disable LOCALVERSION_AUTO
+make "${MAKE_ARGS[@]}" olddefconfig
+if (( BUILD_KSU )); then
+    for option in KSU KSU_TAMPER_SYSCALL_TABLE; do
+        grep -qx "CONFIG_$option=y" "$OUT_DIR/.config" ||
+            die "CONFIG_$option did not survive olddefconfig; check KSU dependencies"
+    done
+    for option in KSU_DEBUG KSU_TOOLKIT KSU_EXTRAS; do
+        if grep -qx "CONFIG_$option=y" "$OUT_DIR/.config"; then
+            die "CONFIG_$option must remain disabled"
         fi
+    done
+fi
+
+{
+    printf 'Kernel repo: %s\nKernel ref: %s\nKernel commit: %s\n' \
+        "$KERNEL_REPO" "$KERNEL_BRANCH" "$(git -C "$KERNEL_DIR" rev-parse HEAD)"
+    printf 'KernelSU enabled: %s\n' "$BUILD_KSU"
+    if (( BUILD_KSU )); then
+        printf 'KernelSU commit: %s\n' "$(git -C "$KERNEL_DIR/KernelSU" rev-parse HEAD)"
     fi
+    printf 'Clang archive: %s\n' "$CLANG_URL"
+    printf 'GCC ARM64 commit: %s\nGCC ARM32 commit: %s\n' \
+        "$(git -C "$TOOLCHAIN_DIR/gcc-arm64" rev-parse HEAD)" \
+        "$(git -C "$TOOLCHAIN_DIR/gcc-arm32" rev-parse HEAD)"
+    clang --version
+    aarch64-linux-android-gcc --version
+    arm-linux-androideabi-gcc --version
+} > "$LOG_DIR/manifest.txt"
 
-    if [ "${USE_CCACHE}" -eq 1 ]; then
-        MAKE_ARGS+=(
-            CC="ccache clang"
-            HOSTCC="ccache gcc"
-        )
+info "Building Image.gz-dtb with $JOBS jobs"
+make -j"$JOBS" "${MAKE_ARGS[@]}" Image.gz-dtb
+IMAGE="$OUT_DIR/arch/arm64/boot/Image.gz-dtb"
+[[ -s "$IMAGE" ]] || die "Image.gz-dtb is missing or empty"
+
+info "Packaging AnyKernel3 ($ANYKERNEL_BRANCH)"
+checkout_repo "$ANYKERNEL_REPO" "$ANYKERNEL_BRANCH" "$WORK_DIR/anykernel"
+[[ -f "$WORK_DIR/anykernel/anykernel.sh" ]] || die "AnyKernel3 anykernel.sh missing"
+grep -q 'device.name[0-9]*=X00TD' "$WORK_DIR/anykernel/anykernel.sh" ||
+    die "AnyKernel3 does not declare X00TD"
+git -C "$WORK_DIR/anykernel" rev-parse HEAD > "$LOG_DIR/anykernel-commit.txt"
+printf 'AnyKernel3 repo: %s\nAnyKernel3 ref: %s\nAnyKernel3 commit: %s\n' \
+    "$ANYKERNEL_REPO" "$ANYKERNEL_BRANCH" \
+    "$(git -C "$WORK_DIR/anykernel" rev-parse HEAD)" >> "$LOG_DIR/manifest.txt"
+cp "$IMAGE" "$WORK_DIR/anykernel/Image.gz-dtb"
+
+KERNEL_VER=$(make -s "${MAKE_ARGS[@]}" kernelversion)
+KERNEL_SHA=$(git -C "$KERNEL_DIR" rev-parse --short=12 HEAD)
+VARIANT=vanilla
+(( BUILD_KSU == 0 )) || VARIANT=KSU
+ZIP_NAME="$KERNEL_VER$LOCALVERSION-$VARIANT-$(date +%Y%m%d-%H%M%S)-$KERNEL_SHA.zip"
+[[ $ZIP_NAME != */* ]] || die "LOCALVERSION must not contain '/'"
+(
+    cd "$WORK_DIR/anykernel"
+    zip -q -r9 "$ARTIFACT_DIR/$ZIP_NAME" . \
+        -x '.git/*' '.github/*' 'README.md' '*placeholder'
+)
+unzip -tq "$ARTIFACT_DIR/$ZIP_NAME"
+
+if (( SIGN_ZIP )); then
+    ZIPSIGNER_JAR="$TOOLCHAIN_DIR/zipsigner-3.0-dexed.jar"
+    if [[ ! -s "$ZIPSIGNER_JAR" ]]; then
+        curl --fail --location --retry 3 \
+            https://github.com/Magisk-Modules-Repo/zipsigner/raw/master/bin/zipsigner-3.0-dexed.jar \
+            -o "$ZIPSIGNER_JAR.tmp"
+        mv "$ZIPSIGNER_JAR.tmp" "$ZIPSIGNER_JAR"
     fi
+    java -jar "$ZIPSIGNER_JAR" "$ARTIFACT_DIR/$ZIP_NAME" \
+        "$ARTIFACT_DIR/${ZIP_NAME%.zip}-signed.zip"
+    rm "$ARTIFACT_DIR/$ZIP_NAME"
+    ZIP_NAME="${ZIP_NAME%.zip}-signed.zip"
+    unzip -tq "$ARTIFACT_DIR/$ZIP_NAME"
 fi
 
-info "Executing defconfig..."
-if [ "${BUILD_KSU}" -eq 1 ]; then
-    make "${MAKE_ARGS[@]}" "${DEFCONFIG}" vendor/extra/ksu.config 2>&1 | tee -a "${BUILD_LOG}" || error "Defconfig step failed"
-else
-    make "${MAKE_ARGS[@]}" "${DEFCONFIG}" 2>&1 | tee -a "${BUILD_LOG}" || error "Defconfig step failed"
-fi
-
-# Override CONFIG_LOCALVERSION
-info "Setting CONFIG_LOCALVERSION=-Singularity"
-scripts/config --file out/.config --set-str CONFIG_LOCALVERSION "-Singularity"
-
-# LTO Optimization
-if [ "${LTO}" -eq 1 ]; then
-    info "Enabling Thin LTO"
-    scripts/config --file out/.config -e LTO_CLANG -e THINLTO
-elif [ "${LTO}" -eq 2 ]; then
-    info "Enabling Full LTO"
-    scripts/config --file out/.config -e LTO_CLANG -d THINLTO
-fi
-
-info "Starting compilation..."
-make -j"${JOBS}" "${MAKE_ARGS[@]}" 2>&1 | tee -a "${BUILD_LOG}" || error "Compilation failed"
-
+cp "$IMAGE" "$ARTIFACT_DIR/Image.gz-dtb"
+cp "$OUT_DIR/.config" "$ARTIFACT_DIR/kernel.config"
+for artifact in System.map Module.symvers; do
+    [[ ! -f "$OUT_DIR/$artifact" ]] || cp "$OUT_DIR/$artifact" "$ARTIFACT_DIR/"
+done
+cp "$LOG_DIR/manifest.txt" "$ARTIFACT_DIR/build-manifest.txt"
+(
+    cd "$ARTIFACT_DIR"
+    sha256sum "$ZIP_NAME" Image.gz-dtb kernel.config > SHA256SUMS
+)
 BUILD_END=$(date +%s)
 ELAPSED=$((BUILD_END - BUILD_START))
-BUILD_TIME="$((ELAPSED / 60))m $((ELAPSED % 60))s"
+success "Built $ZIP_NAME in $((ELAPSED / 60))m $((ELAPSED % 60))s"
+# Existing optional upload helpers use paths relative to WORK_DIR.
+cd "$WORK_DIR"
 
-# ──────────────────────────────────────────
-# Package with AnyKernel3
-# ──────────────────────────────────────────
-IMAGE="out/arch/arm64/boot/Image.gz-dtb"
-
-if [ ! -f "${IMAGE}" ]; then
-    error "Build failed in ${BUILD_TIME}! Image.gz-dtb not found."
-fi
-
-success "Build successful in ${BUILD_TIME}! Packaging..."
-
-KERNEL_VER="$(make -s kernelversion)"
-LOCALVER="$(grep -oP 'CONFIG_LOCALVERSION="\K[^"]+' out/.config 2>/dev/null || true)"
-ZIP_NAME="${KERNEL_VER}${LOCALVER}-$(date +'%Y%m%d-%H%M').zip"
-
-# Wait for AnyKernel3 (started in background)
-wait "${PID_ANYKERNEL}" || error "AnyKernel3 setup failed"
-
-if [ ! -d "../anykernel" ]; then
-    error "AnyKernel3 directory not found"
-fi
-
-cp "${IMAGE}" "../anykernel/"
-cd "../anykernel" || error "AnyKernel3 directory not accessible"
-zip -r9 "../${ZIP_NAME}" . -x '.git/*' 'README.md' '*placeholder' || error "Failed to create ZIP"
-cd ..
-
-mkdir -p out-zip
-mv "${ZIP_NAME}" out-zip/
-
-# ──────────────────────────────────────────
-# ZipSigner
-# ──────────────────────────────────────────
-# Wait for ZipSigner (started in background)
-wait "${PID_ZIPSIGNER}" || error "ZipSigner download failed"
-
-info "Signing ZIP with ZipSigner"
-if [ ! -f "${ZIPSIGNER_JAR}" ]; then
-    error "ZipSigner JAR not found at ${ZIPSIGNER_JAR}"
-fi
-
-java -jar "${ZIPSIGNER_JAR}" "out-zip/${ZIP_NAME}" "out-zip/${ZIP_NAME%.zip}-signed.zip" || error "Signing failed"
-rm -f "out-zip/${ZIP_NAME}"
-ZIP_NAME="${ZIP_NAME%.zip}-signed.zip"
-
-success "ZIP: ${ZIP_NAME}"
-
-# ──────────────────────────────────────────
-# Notifications
-# ──────────────────────────────────────────
 send_telegram() {
     local zip_path="out-zip/${ZIP_NAME}"
     if [ ! -f "${zip_path}" ]; then
@@ -425,9 +352,8 @@ send_pixeldrain() {
     echo ""
 }
 
-# ──────────────────────────────────────────
-# Finalize
-# ──────────────────────────────────────────
-send_telegram
-send_pixeldrain
+
+# Upload only when the existing opt-in credentials are configured.
+send_telegram || info "Telegram upload failed; CircleCI artifacts are retained"
+send_pixeldrain || info "Pixeldrain upload failed; CircleCI artifacts are retained"
 success "Done!"
