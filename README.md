@@ -115,10 +115,9 @@ dengan git apply --check sebelum diterapkan.
   Git checkout dan ZIP asli dijalankan; kompilasi/toolchain serta signer dimock.
 - Fragment KSU juga diuji dengan parser Kconfig kernel lokal 4.4 dan Kconfig fork
   yang dipatok: kedua opsi KSU yang wajib tetap aktif.
-- Kompilasi kernel penuh, unduhan toolchain/ZipSigner, validasi server CircleCI,
-  dan boot belum dijalankan di lingkungan lokal ini. Akses jaringan shell
-  terhalang DNS dan toolchain ARM tidak terpasang. Job CircleCI pertama masih
-  diperlukan untuk memastikan hasil kompilasi dan menguji ZIP di perangkat.
+- Konfigurasi juga divalidasi oleh CLI CircleCI. Kompilasi penuh dan signing
+  dijalankan oleh job build; periksa hasil pipeline untuk revision yang digunakan.
+  Boot di perangkat belum diuji.
 
 Tes offline dapat diulang dengan:
 

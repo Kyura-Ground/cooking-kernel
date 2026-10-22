@@ -60,6 +60,7 @@ jobs:
       - restore_cache:
           keys:
             - kernel44-toolchains-v1-{{ arch }}-{{ checksum "build.sh" }}
+            - kernel44-toolchains-v1-{{ arch }}-
       - restore_cache:
           keys:
             - kernel44-ccache-v1-{{ .Branch }}-{{ checksum "build.sh" }}-
@@ -73,10 +74,12 @@ jobs:
           command: CCACHE_DIR="$PWD/.ccache" ccache --show-stats
       - save_cache:
           key: kernel44-toolchains-v1-{{ arch }}-{{ checksum "build.sh" }}
+          when: always
           paths:
             - .toolchains
       - save_cache:
           key: kernel44-ccache-v1-{{ .Branch }}-{{ checksum "build.sh" }}-{{ epoch }}
+          when: always
           paths:
             - .ccache
       - store_artifacts:

@@ -154,6 +154,8 @@ MAKE_ARGS=(
     CROSS_COMPILE_ARM32=arm-linux-androideabi-
     CLANG_TRIPLE=aarch64-linux-gnu-
     CLANG_TRIPLE_ARM32=arm-linux-gnueabi-
+    # The compat vDSO needs the full binutils prefix, not just the bin directory.
+    "CLANG_PREFIX32=--prefix=$TOOLCHAIN_DIR/gcc-arm32/bin/arm-linux-androideabi-"
     LLVM_IAS=0 HOSTCC=gcc HOSTCXX=g++
 )
 if (( USE_CCACHE )); then
