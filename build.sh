@@ -115,7 +115,8 @@ setup_clang() {
     fi
     local staging
     staging=$(mktemp -d "$TOOLCHAIN_DIR/.clang-download.XXXXXX")
-    curl --fail --location --retry 3 --connect-timeout 30 \
+    curl --fail --location --retry 8 --retry-delay 15 --retry-max-time 600 \
+        --connect-timeout 30 \
         "$CLANG_URL" -o "$staging/clang.tar.gz"
     mkdir "$staging/extracted"
     tar -xzf "$staging/clang.tar.gz" -C "$staging/extracted"
