@@ -160,11 +160,13 @@ if (( USE_CCACHE )); then
     command -v ccache >/dev/null || die "USE_CCACHE=1 requires ccache"
     export CCACHE_DIR="$WORK_DIR/.ccache"
     ccache --max-size "${CCACHE_MAXSIZE:-5G}"
-    MAKE_ARGS+=("CC=ccache clang")
+    MAKE_ARGS+=("CC=ccache clang -fdebug-default-version=4")
 else
-    MAKE_ARGS+=(CC=clang)
+    MAKE_ARGS+=("CC=clang -fdebug-default-version=4")
 fi
 # Keep GNU 4.9 binutils selected by CROSS_COMPILE; LLVM=1 is not supported here.
+# Clang 14 defaults to DWARF 5, which those assemblers cannot read. Keep the
+# default on CC so the compat vDSO's separate flags also use DWARF 4 with -g.
 
 if [[ -d "$ROOT/patches" ]]; then
     for patch in "$ROOT/patches/"*.patch; do

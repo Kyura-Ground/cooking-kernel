@@ -99,7 +99,7 @@ a=sys.argv[1:];d=pathlib.Path(a[a.index('-C')+1]);o=pathlib.Path(next(x[2:] for 
 assert 'CROSS_COMPILE=aarch64-linux-android-' in a
 assert 'CROSS_COMPILE_ARM32=arm-linux-androideabi-' in a
 assert 'CLANG_TRIPLE=aarch64-linux-gnu-' in a and 'LLVM_IAS=0' in a
-assert 'CC=clang' in a
+assert 'CC=clang -fdebug-default-version=4' in a
 with open(os.environ['CALL_LOG'],'a') as f:f.write(json.dumps(a)+'\\n')
 o.mkdir(parents=True,exist_ok=True)
 if 'X00TD_defconfig' in a:(o/'.config').write_text('CONFIG_LOCALVERSION="-lineageos"\\n')
