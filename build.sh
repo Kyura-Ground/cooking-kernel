@@ -8,7 +8,7 @@ cd "$ROOT"
 KERNEL_REPO="${KERNEL_REPO:-https://github.com/Kyura-Ground/android_kernel_asus_sdm660}"
 KERNEL_BRANCH="${KERNEL_BRANCH:-lineage-20}"
 DEFCONFIG="${DEFCONFIG:-X00TD_defconfig}"
-CLANG_URL="${CLANG_URL:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/425c8149f17c8d9914bf690b4d5abe45a13fb993/clang-r487747c.tar.gz}"
+CLANG_URL="${CLANG_URL:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/747f0cceb48f48bf7cf497a3e01af1389266904b/clang-r614150.tar.gz}"
 GCC_64_REPO="${GCC_64_REPO:-https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9}"
 GCC_64_REF="${GCC_64_REF:-5e030eafe024784a73cdf47e6936ac0dbfc763dc}"
 GCC_32_REPO="${GCC_32_REPO:-https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9}"
@@ -167,8 +167,8 @@ if (( USE_CCACHE )); then
 else
     MAKE_ARGS+=("CC=clang -fdebug-default-version=4")
 fi
-# Keep GNU 4.9 binutils selected by CROSS_COMPILE; LLVM=1 is not supported here.
-# Clang 14 defaults to DWARF 5, which those assemblers cannot read. Keep the
+# Keep GNU 4.9 binutils selected by CROSS_COMPILE; this builder uses LLVM_IAS=0.
+# Modern Clang defaults to DWARF 5, which those assemblers cannot read. Keep the
 # default on CC so the compat vDSO's separate flags also use DWARF 4 with -g.
 
 if [[ -d "$ROOT/patches" ]]; then
