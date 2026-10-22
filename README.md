@@ -10,7 +10,7 @@ Default build:
 | Source | https://github.com/Kyura-Ground/android_kernel_asus_sdm660 |
 | Branch kernel | lineage-20 |
 | Defconfig | X00TD_defconfig |
-| Clang | AOSP clang-r450784d, snapshot 292044a13f9d1d6f42c15d56f92fe8e11e363ca0 |
+| Clang | AOSP clang-r487747c (17.0.2), snapshot 425c8149f17c8d9914bf690b4d5abe45a13fb993 |
 | GNU cross tools | LineageOS GCC 4.9 ARM64 dan ARM32, revision dipatok di build.sh |
 | KernelSU | backslashxx/KernelSU, revision a7f37595dcf067791fc2c689047a651c19d6704c |
 | AnyKernel3 | Kyura-Ground/AnyKernel3, branch 4.4 |
