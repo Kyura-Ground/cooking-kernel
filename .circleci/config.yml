@@ -54,7 +54,7 @@ jobs:
             apt-get update
             DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
               ca-certificates git openssh-client bc bison build-essential flex \
-              libssl-dev libelf-dev libncurses5 libtinfo5 python3 curl \
+              libssl-dev libelf-dev libncurses5 libtinfo5 python3 python-is-python3 curl \
               cpio zip unzip default-jre-headless ccache tzdata
       - checkout
       - restore_cache:

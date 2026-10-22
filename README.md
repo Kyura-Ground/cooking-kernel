@@ -79,7 +79,7 @@ Dependensi Ubuntu 22.04:
 
     sudo apt-get update
     sudo apt-get install git openssh-client bc bison build-essential flex \
-      libssl-dev libelf-dev libncurses5 libtinfo5 python3 curl cpio zip unzip \
+      libssl-dev libelf-dev libncurses5 libtinfo5 python3 python-is-python3 curl cpio zip unzip \
       default-jre-headless ccache ca-certificates
 
 Jalankan:
