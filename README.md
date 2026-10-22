@@ -112,6 +112,7 @@ dengan git apply --check sebelum diterapkan.
 - Sintaks Bash dan parsing YAML diperiksa.
 - Tes offline mencakup build KSU, vanilla, jalur ZIP signing dengan signer mock,
   kegagalan kompilasi, image kosong, opsi KSU yang hilang, dan penolakan LTO/NoMount.
+  Cache toolchain diuji dengan rewrite URL Git dan penolakan origin yang berbeda.
   Git checkout dan ZIP asli dijalankan; kompilasi/toolchain serta signer dimock.
 - Fragment KSU juga diuji dengan parser Kconfig kernel lokal 4.4 dan Kconfig fork
   yang dipatok: kedua opsi KSU yang wajib tetap aktif.

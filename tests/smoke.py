@@ -121,12 +121,29 @@ else:raise AssertionError(a)
                CLANG_URL=archive.as_uri(), KSU_REPO=str(ksu), KSU_REF=ksu_sha,
                ANYKERNEL_REPO=str(ak), ANYKERNEL_BRANCH="4.4", SIGN_ZIP="0", USE_CCACHE="0", JOBS="2")
 
-    def run(name, overrides, succeeds, expected_error=None):
+    def run(name, overrides, succeeds, expected_error=None, cache_origin=None):
         work = tmp / name
         if overrides.get("SIGN_ZIP") == "true":
             write(work / ".toolchains/zipsigner-3.0-dexed.jar", "fixture signer")
         e = dict(env, WORK_DIR=str(work), BUILD_KSU="true", CALL_LOG=str(tmp / (name+"-calls.jsonl")))
         e.update(overrides)
+        if cache_origin:
+            home = tmp / (name + "-home")
+            home.mkdir()
+            e["HOME"] = str(home)
+            for directory, (source, _) in zip(("gcc-arm64", "gcc-arm32"), tool_repos):
+                subprocess.run(["git", "clone", "-q", str(source),
+                                str(work / ".toolchains" / directory)], env=e, check=True)
+            # Model CircleCI's insteadOf transport rewrite on a real cached clone.
+            source = tool_repos[0][0]
+            write(home / ".gitconfig", f'[url "{source.as_uri()}"]\n\tinsteadOf = {source}\n')
+            cached = work / ".toolchains/gcc-arm64"
+            rewritten = subprocess.check_output(["git", "-C", str(cached), "remote",
+                                                 "get-url", "origin"], env=e, text=True).strip()
+            assert rewritten == source.as_uri() and rewritten != str(source)
+            if cache_origin == "wrong":
+                subprocess.run(["git", "-C", str(cached), "remote", "set-url", "origin",
+                                str(tool_repos[1][0])], env=e, check=True)
         result = subprocess.run(["bash", str(builder / "build.sh")], env=e, text=True, capture_output=True)
         if (result.returncode == 0) != succeeds:
             raise AssertionError(name+"\n"+result.stdout+result.stderr)
@@ -160,3 +177,5 @@ else:raise AssertionError(a)
     run("missing-ksu-option", {"DROP_KSU": "1"}, False, "CONFIG_KSU did not survive")
     run("unsupported-lto", {"LTO": "1"}, False, "does not enable LTO")
     run("unsupported-nomount", {"BUILD_NOMOUNT": "1"}, False, "NoMount is not configured")
+    run("cached-tools-url-rewrite", {}, True, cache_origin="rewritten")
+    run("cached-tools-wrong-origin", {}, False, "Cached repository URL differs", cache_origin="wrong")

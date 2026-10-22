@@ -91,7 +91,8 @@ checkout_repo() {
     local repo=$1 ref=$2 dest=$3
     if [[ -e "$dest" ]]; then
         [[ -d "$dest/.git" ]] || die "$dest exists and is not a Git clone"
-        [[ $(git -C "$dest" remote get-url origin) == "$repo" ]] ||
+        # Compare the stored URL; get-url expands CircleCI's insteadOf rewrites.
+        [[ $(git -C "$dest" config --get remote.origin.url) == "$repo" ]] ||
             die "Cached repository URL differs: $dest"
         [[ -z $(git -C "$dest" status --porcelain) ]] ||
             die "$dest has changes; move it aside before rebuilding"
