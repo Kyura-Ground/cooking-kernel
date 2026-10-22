@@ -40,7 +40,7 @@ KERNEL_BRANCH="${KERNEL_BRANCH:-lineage-24.0}"
 DEFCONFIG="${DEFCONFIG:-vendor/asus/X00TD_defconfig}"
 
 # Toolchains
-CLANG_URL="${CLANG_URL:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/af3fae2c8e67673c43217d0cf75dbf3f268de272/clang-r596125.tar.gz}"
+CLANG_URL="${CLANG_URL:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/747f0cceb48f48bf7cf497a3e01af1389266904b/clang-r614150.tar.gz}"
 
 USE_GCC_CROSS="${USE_GCC_CROSS:-1}" # Set to 1 to use Clang x GCC 11.2.1
 GCC_64_REPO="${GCC_64_REPO:-https://github.com/mvaisakh/gcc-arm64}"
