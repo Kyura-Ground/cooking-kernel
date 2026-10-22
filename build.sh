@@ -133,9 +133,10 @@ info "Preparing Linux 4.4 source and toolchains"
 checkout_repo "$KERNEL_REPO" "$KERNEL_BRANCH" "$KERNEL_DIR"
 [[ -f "$KERNEL_DIR/arch/arm64/configs/$DEFCONFIG" ]] ||
     die "Missing arch/arm64/configs/$DEFCONFIG"
-grep -Eq '^VERSION[[:space:]]*=[[:space:]]*4$' "$KERNEL_DIR/Makefile" &&
-    grep -Eq '^PATCHLEVEL[[:space:]]*=[[:space:]]*4$' "$KERNEL_DIR/Makefile" ||
+if ! grep -Eq '^VERSION[[:space:]]*=[[:space:]]*4$' "$KERNEL_DIR/Makefile" ||
+    ! grep -Eq '^PATCHLEVEL[[:space:]]*=[[:space:]]*4$' "$KERNEL_DIR/Makefile"; then
     die "Expected a Linux 4.4 kernel; check KERNEL_REPO/KERNEL_BRANCH"
+fi
 
 setup_clang
 checkout_repo "$GCC_64_REPO" "$GCC_64_REF" "$TOOLCHAIN_DIR/gcc-arm64"
@@ -180,6 +181,8 @@ if (( BUILD_KSU )); then
     [[ ! -e "$KERNEL_DIR/drivers/kernelsu" && ! -L "$KERNEL_DIR/drivers/kernelsu" ]] ||
         die "Source already has drivers/kernelsu; use a fresh kernel-src"
     ln -s ../KernelSU/kernel "$KERNEL_DIR/drivers/kernelsu"
+    # CONFIG_KSU is a Make variable; preserve it literally for Kbuild.
+    # shellcheck disable=SC2016
     printf '\nobj-$(CONFIG_KSU) += kernelsu/\n' >> "$KERNEL_DIR/drivers/Makefile"
     printf '\nsource "drivers/kernelsu/Kconfig"\n' >> "$KERNEL_DIR/drivers/Kconfig"
 fi
