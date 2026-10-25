@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# X00TD / LineageOS 20 / Linux 4.4 builder.
+# X00TD / AxionOS Android 16 / Linux 4.4 builder.
 set -Eeuo pipefail
 
 ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
@@ -132,7 +132,9 @@ setup_clang() {
 }
 
 info "Preparing Linux 4.4 source and toolchains"
+info "Kernel source: $KERNEL_REPO ($KERNEL_BRANCH)"
 checkout_repo "$KERNEL_REPO" "$KERNEL_BRANCH" "$KERNEL_DIR"
+info "Kernel commit: $(git -C "$KERNEL_DIR" rev-parse HEAD)"
 [[ -f "$KERNEL_DIR/arch/arm64/configs/$DEFCONFIG" ]] ||
     die "Missing arch/arm64/configs/$DEFCONFIG"
 if ! grep -Eq '^VERSION[[:space:]]*=[[:space:]]*4$' "$KERNEL_DIR/Makefile" ||

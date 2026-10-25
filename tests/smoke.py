@@ -13,8 +13,20 @@ import tarfile
 import tempfile
 import zipfile
 
+import yaml
+
 ROOT = Path(__file__).resolve().parents[1]
 KERNEL = ROOT.parent / "android_kernel_asus_sdm660"
+AXION_BRANCH = "axion-23.2-4.4"
+pipeline = yaml.safe_load((ROOT / ".circleci/config.yml").read_text())
+pipeline_branch = pipeline["parameters"]["kernel-branch"]["default"]
+assert pipeline_branch == AXION_BRANCH, "CircleCI must default to the Axion A16 source"
+assert pipeline["executors"]["kernel-builder"]["environment"]["KERNEL_BRANCH"] == \
+    "<< pipeline.parameters.kernel-branch >>"
+example_branch = subprocess.check_output(
+    ["bash", "-c", 'source "$1"; printf "%s" "$KERNEL_BRANCH"',
+     "example-config", str(ROOT / "config.example.sh")], text=True)
+assert example_branch == AXION_BRANCH, "Example config must select the Axion A16 source"
 
 
 def write(path, text, executable=False):
@@ -57,7 +69,7 @@ cat "$5" >> "$4"
         config_helper = (KERNEL / "scripts/config").read_text()
         merge_helper = (KERNEL / "scripts/kconfig/merge_config.sh").read_text()
     kernel = tmp / "kernel"
-    kernel_sha = git_repo(kernel, [
+    git_repo(kernel, [
         ("Makefile", "VERSION = 4\nPATCHLEVEL = 4\nSUBLEVEL = 302\n", False),
         ("arch/arm64/configs/X00TD_defconfig", "CONFIG_LOCALVERSION=\"-lineageos\"\n", False),
         ("drivers/Kconfig", 'menu "Drivers"\nendmenu\n', False),
@@ -65,6 +77,14 @@ cat "$5" >> "$4"
         ("scripts/config", config_helper, True),
         ("scripts/kconfig/merge_config.sh", merge_helper, True),
     ], "lineage-20")
+    # Give Axion its own commit, so a legacy checkout cannot pass by matching
+    # the expected branch name while packaging the same fixture revision.
+    subprocess.run(["git", "-C", str(kernel), "checkout", "-qb", AXION_BRANCH], check=True)
+    write(kernel / "axion-fixture", "A16 fixture source\n")
+    subprocess.run(["git", "-C", str(kernel), "add", "axion-fixture"], check=True)
+    subprocess.run(["git", "-C", str(kernel), "-c", "user.name=Fixture", "-c",
+                    "user.email=fixture@example.invalid", "-c", "commit.gpgsign=false",
+                    "commit", "-qm", "Axion fixture"], check=True)
     ksu = tmp / "ksu"
     ksu_sha = git_repo(ksu, [("kernel/Kconfig", "config KSU\n    tristate\n", False)])
     ak = tmp / "ak"
@@ -127,6 +147,10 @@ else:raise AssertionError(a)
             write(work / ".toolchains/zipsigner-3.0-dexed.jar", "fixture signer")
         e = dict(env, WORK_DIR=str(work), BUILD_KSU="true", CALL_LOG=str(tmp / (name+"-calls.jsonl")))
         e.update(overrides)
+        e = {key: value for key, value in e.items() if value is not None}
+        expected_ref = e.get("KERNEL_BRANCH") or AXION_BRANCH
+        expected_sha = subprocess.check_output(
+            ["git", "-C", str(kernel), "rev-parse", expected_ref], text=True).strip()
         if cache_origin:
             home = tmp / (name + "-home")
             home.mkdir()
@@ -157,7 +181,13 @@ else:raise AssertionError(a)
             with zipfile.ZipFile(zips[0]) as z:
                 assert z.read("Image.gz-dtb") == b"fixture-image"
                 assert not any(n.startswith(".git/") for n in z.namelist())
-            assert kernel_sha in (work / "out-zip/build-manifest.txt").read_text()
+            manifest = (work / "out-zip/build-manifest.txt").read_text()
+            assert f"Kernel commit: {expected_sha}\n" in manifest
+            assert f"Kernel ref: {expected_ref}\n" in manifest
+            assert subprocess.check_output(
+                ["git", "-C", str(work / "kernel-src"), "rev-parse", "HEAD"],
+                text=True).strip() == expected_sha
+            assert expected_sha[:12] in zips[0].name
             config = (work / "out-zip/kernel.config").read_text()
             if overrides.get("BUILD_KSU") == "false":
                 assert "CONFIG_KSU=y" not in config and not (work / "kernel-src/KernelSU").exists()
@@ -169,6 +199,9 @@ else:raise AssertionError(a)
             assert list((work / "logs").glob("build_*.log"))
         print(name+": PASS")
 
+    run("script-default-axion", {"KERNEL_BRANCH": None}, True)
+    run("circleci-default-axion", {"KERNEL_BRANCH": pipeline_branch}, True)
+    run("example-default-axion", {"KERNEL_BRANCH": example_branch}, True)
     run("ksu", {}, True)
     run("vanilla", {"BUILD_KSU": "false"}, True)
     run("signed-ksu", {"SIGN_ZIP": "true"}, True)

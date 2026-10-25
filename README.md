@@ -1,6 +1,8 @@
 # X00TD kernel 4.4 builder
 
-Branch ini, lineage-20, membangun kernel X00TD untuk Android 13 / LineageOS 20.
+Branch builder ini tetap bernama `lineage-20`, tetapi default source kernel kini
+`axion-23.2-4.4` untuk AxionOS Android 16. Nama branch builder dan branch source
+kernel adalah dua pilihan terpisah.
 Basis builder 4.19 tetap tersedia pada branch lineage-24.0.
 
 Default build:
@@ -8,7 +10,7 @@ Default build:
 | Bagian | Default |
 | --- | --- |
 | Source | https://github.com/Kyura-Ground/android_kernel_asus_sdm660 |
-| Branch kernel | lineage-20 |
+| Branch kernel | axion-23.2-4.4 |
 | Defconfig | X00TD_defconfig |
 | Clang | AOSP clang-r614150 (23.0.1), snapshot 747f0cceb48f48bf7cf497a3e01af1389266904b |
 | GNU cross tools | LineageOS GCC 4.9 ARM64 dan ARM32, revision dipatok di build.sh |
@@ -29,9 +31,20 @@ LTO, atau NoMount dari konfigurasi 4.19.
 
 | Parameter pipeline | Tipe | Default |
 | --- | --- | --- |
-| kernel-branch | string | lineage-20 |
+| kernel-branch | string | axion-23.2-4.4 |
 | build-ksu | boolean | true |
 | sign-zip | boolean | true |
+
+CircleCI mengekspor parameter `kernel-branch` sebagai `KERNEL_BRANCH`, sehingga
+nilainya mengalahkan fallback di `build.sh`. Mengganti fallback script saja
+tidak mengganti branch yang dipakai pipeline. Periksa juga parameter eksplisit
+pada trigger/API/schedule dan `config.sh` lama jika ada.
+
+Untuk Axion A16, pastikan log dan `build-manifest.txt` menyebut
+`Kernel ref: axion-23.2-4.4` dan commit dari branch tersebut. ZIP dari commit
+`82e9e58379b6` pada `lineage-20` tidak memuat prasyarat bringup A16.
+Untuk ROM Android 13 lama, pilih parameter `kernel-branch: lineage-20` secara
+eksplisit; hasilnya tidak ditujukan untuk Axion A16.
 
 Job lint memeriksa sintaks Bash, ShellCheck, YAML, dan tes alur builder offline.
 Job build memasang dependensi Ubuntu 22.04, mengambil source/toolchain,
@@ -79,7 +92,7 @@ Dependensi Ubuntu 22.04:
 
     sudo apt-get update
     sudo apt-get install git openssh-client bc bison build-essential flex \
-      libssl-dev libelf-dev libncurses5 libtinfo5 python3 python-is-python3 curl cpio zip unzip \
+      libssl-dev libelf-dev libncurses5 libtinfo5 python3 python3-yaml python-is-python3 curl cpio zip unzip \
       default-jre-headless ccache ca-certificates
 
 Jalankan:
@@ -113,6 +126,8 @@ dengan git apply --check sebelum diterapkan.
 - Tes offline mencakup build KSU, vanilla, jalur ZIP signing dengan signer mock,
   kegagalan kompilasi, image kosong, opsi KSU yang hilang, dan penolakan LTO/NoMount.
   Cache toolchain diuji dengan rewrite URL Git dan penolakan origin yang berbeda.
+  Pemilihan source diuji melalui default script, parameter default CircleCI,
+  dan contoh `config.sh`, memakai commit fixture A16 yang berbeda dari legacy.
   Git checkout dan ZIP asli dijalankan; kompilasi/toolchain serta signer dimock.
 - Fragment KSU juga diuji dengan parser Kconfig kernel lokal 4.4 dan Kconfig fork
   yang dipatok: kedua opsi KSU yang wajib tetap aktif.
