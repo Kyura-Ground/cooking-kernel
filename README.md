@@ -1,6 +1,6 @@
 # X00TD kernel 4.4 builder
 
-Builder tersedia di branch `axion`. Default source kernel memakai
+Builder tersedia di branch `lineage-23.2`. Default source kernel memakai
 `lineage-23.2` untuk LineageOS 23.2 (Android 16).
 Basis builder 4.19 tetap tersedia pada branch lineage-24.0.
 
@@ -24,8 +24,8 @@ LTO, atau NoMount dari konfigurasi 4.19.
 
 ## Build di CircleCI
 
-1. Push branch axion dari repository cooking-kernel ke GitHub.
-2. Pilih branch axion saat menjalankan pipeline CircleCI untuk repository ini.
+1. Push branch lineage-23.2 dari repository cooking-kernel ke GitHub.
+2. Pilih branch lineage-23.2 saat menjalankan pipeline CircleCI untuk repository ini.
 3. Gunakan parameter default, atau ubah parameter berikut saat memicu pipeline.
 
 | Parameter pipeline | Tipe | Default |
