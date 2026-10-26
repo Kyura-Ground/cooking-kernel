@@ -17,7 +17,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 KERNEL = ROOT.parent / "android_kernel_asus_sdm660"
-AXION_BRANCH = "axion-23.2-4.4"
+AXION_BRANCH = "axion"
 pipeline = yaml.safe_load((ROOT / ".circleci/config.yml").read_text())
 pipeline_branch = pipeline["parameters"]["kernel-branch"]["default"]
 assert pipeline_branch == AXION_BRANCH, "CircleCI must default to the Axion A16 source"

@@ -1,8 +1,6 @@
 # X00TD kernel 4.4 builder
 
-Branch builder ini tetap bernama `lineage-20`, tetapi default source kernel kini
-`axion-23.2-4.4` untuk AxionOS Android 16. Nama branch builder dan branch source
-kernel adalah dua pilihan terpisah.
+Branch builder dan source kernel memakai `axion` untuk AxionOS Android 16.
 Basis builder 4.19 tetap tersedia pada branch lineage-24.0.
 
 Default build:
@@ -10,7 +8,7 @@ Default build:
 | Bagian | Default |
 | --- | --- |
 | Source | https://github.com/Kyura-Ground/android_kernel_asus_sdm660 |
-| Branch kernel | axion-23.2-4.4 |
+| Branch kernel | axion |
 | Defconfig | X00TD_defconfig |
 | Clang | AOSP clang-r614150 (23.0.1), snapshot 747f0cceb48f48bf7cf497a3e01af1389266904b |
 | GNU cross tools | LineageOS GCC 4.9 ARM64 dan ARM32, revision dipatok di build.sh |
@@ -25,13 +23,13 @@ LTO, atau NoMount dari konfigurasi 4.19.
 
 ## Build di CircleCI
 
-1. Push branch lineage-20 dari repository cooking-kernel ke GitHub.
-2. Pilih branch lineage-20 saat menjalankan pipeline CircleCI untuk repository ini.
+1. Push branch axion dari repository cooking-kernel ke GitHub.
+2. Pilih branch axion saat menjalankan pipeline CircleCI untuk repository ini.
 3. Gunakan parameter default, atau ubah parameter berikut saat memicu pipeline.
 
 | Parameter pipeline | Tipe | Default |
 | --- | --- | --- |
-| kernel-branch | string | axion-23.2-4.4 |
+| kernel-branch | string | axion |
 | build-ksu | boolean | true |
 | sign-zip | boolean | true |
 
@@ -41,7 +39,7 @@ tidak mengganti branch yang dipakai pipeline. Periksa juga parameter eksplisit
 pada trigger/API/schedule dan `config.sh` lama jika ada.
 
 Untuk Axion A16, pastikan log dan `build-manifest.txt` menyebut
-`Kernel ref: axion-23.2-4.4` dan commit dari branch tersebut. ZIP dari commit
+`Kernel ref: axion` dan commit dari branch tersebut. ZIP dari commit
 `82e9e58379b6` pada `lineage-20` tidak memuat prasyarat bringup A16.
 Untuk ROM Android 13 lama, pilih parameter `kernel-branch: lineage-20` secara
 eksplisit; hasilnya tidak ditujukan untuk Axion A16.
