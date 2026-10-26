@@ -6,7 +6,7 @@ ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 cd "$ROOT"
 
 KERNEL_REPO="${KERNEL_REPO:-https://github.com/Kyura-Ground/android_kernel_asus_sdm660}"
-KERNEL_BRANCH="${KERNEL_BRANCH:-axion}"
+KERNEL_BRANCH="${KERNEL_BRANCH:-lineage-23.2}"
 DEFCONFIG="${DEFCONFIG:-X00TD_defconfig}"
 CLANG_URL="${CLANG_URL:-https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/747f0cceb48f48bf7cf497a3e01af1389266904b/clang-r614150.tar.gz}"
 GCC_64_REPO="${GCC_64_REPO:-https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9}"

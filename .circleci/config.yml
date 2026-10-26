@@ -3,7 +3,7 @@ version: 2.1
 parameters:
   kernel-branch:
     type: string
-    default: axion
+    default: lineage-23.2
   build-ksu:
     type: boolean
     default: true

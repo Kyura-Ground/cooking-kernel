@@ -1,6 +1,7 @@
 # X00TD kernel 4.4 builder
 
-Branch builder dan source kernel memakai `axion` untuk AxionOS Android 16.
+Builder tersedia di branch `axion`. Default source kernel memakai
+`lineage-23.2` untuk LineageOS 23.2 (Android 16).
 Basis builder 4.19 tetap tersedia pada branch lineage-24.0.
 
 Default build:
@@ -8,7 +9,7 @@ Default build:
 | Bagian | Default |
 | --- | --- |
 | Source | https://github.com/Kyura-Ground/android_kernel_asus_sdm660 |
-| Branch kernel | axion |
+| Branch kernel | lineage-23.2 |
 | Defconfig | X00TD_defconfig |
 | Clang | AOSP clang-r614150 (23.0.1), snapshot 747f0cceb48f48bf7cf497a3e01af1389266904b |
 | GNU cross tools | LineageOS GCC 4.9 ARM64 dan ARM32, revision dipatok di build.sh |
@@ -29,7 +30,7 @@ LTO, atau NoMount dari konfigurasi 4.19.
 
 | Parameter pipeline | Tipe | Default |
 | --- | --- | --- |
-| kernel-branch | string | axion |
+| kernel-branch | string | lineage-23.2 |
 | build-ksu | boolean | true |
 | sign-zip | boolean | true |
 
@@ -38,11 +39,11 @@ nilainya mengalahkan fallback di `build.sh`. Mengganti fallback script saja
 tidak mengganti branch yang dipakai pipeline. Periksa juga parameter eksplisit
 pada trigger/API/schedule dan `config.sh` lama jika ada.
 
-Untuk Axion A16, pastikan log dan `build-manifest.txt` menyebut
-`Kernel ref: axion` dan commit dari branch tersebut. ZIP dari commit
+Untuk LineageOS 23.2, pastikan log dan `build-manifest.txt` menyebut
+`Kernel ref: lineage-23.2` dan commit dari branch tersebut. ZIP dari commit
 `82e9e58379b6` pada `lineage-20` tidak memuat prasyarat bringup A16.
 Untuk ROM Android 13 lama, pilih parameter `kernel-branch: lineage-20` secara
-eksplisit; hasilnya tidak ditujukan untuk Axion A16.
+eksplisit; hasilnya tidak ditujukan untuk LineageOS 23.2.
 
 Job lint memeriksa sintaks Bash, ShellCheck, YAML, dan tes alur builder offline.
 Job build memasang dependensi Ubuntu 22.04, mengambil source/toolchain,
