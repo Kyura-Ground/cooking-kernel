@@ -8,7 +8,7 @@ Default build:
 
 | Bagian | Default |
 | --- | --- |
-| Source | https://github.com/Kyura-Ground/android_kernel_asus_sdm660 |
+| Source | https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.4 |
 | Branch kernel | lineage-23.2 |
 | Defconfig | X00TD_defconfig |
 | Clang | AOSP clang-r614150 (23.0.1), snapshot 747f0cceb48f48bf7cf497a3e01af1389266904b |

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2034
 # Copy to config.sh for local overrides; config.sh is intentionally ignored.
-KERNEL_REPO="https://github.com/Kyura-Ground/android_kernel_asus_sdm660"
+KERNEL_REPO="https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.4"
 KERNEL_BRANCH="lineage-23.2"
 DEFCONFIG="X00TD_defconfig"
 BUILD_KSU=1
