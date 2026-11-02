@@ -21,7 +21,7 @@ BUILD_KSU="${BUILD_KSU:-1}"
 BUILD_NOMOUNT="${BUILD_NOMOUNT:-0}"
 SIGN_ZIP="${SIGN_ZIP:-1}"
 USE_CCACHE="${USE_CCACHE:-1}"
-LOCALVERSION="${LOCALVERSION:--Singularity}"
+LOCALVERSION="${LOCALVERSION:-}"
 KBUILD_BUILD_USER="${KBUILD_BUILD_USER:-Kyura}"
 KBUILD_BUILD_HOST="${KBUILD_BUILD_HOST:-circleci}"
 WORK_DIR="${WORK_DIR:-$ROOT}"
@@ -153,6 +153,8 @@ done
 
 MAKE_ARGS=(
     -C "$KERNEL_DIR" O="$OUT_DIR" ARCH=arm64 SUBARCH=arm64
+    # Keep an exported override from being appended to CONFIG_LOCALVERSION again.
+    LOCALVERSION=
     CROSS_COMPILE=aarch64-linux-android-
     CROSS_COMPILE_ARM32=arm-linux-androideabi-
     CLANG_TRIPLE=aarch64-linux-gnu-
@@ -204,8 +206,10 @@ if (( BUILD_KSU )); then
             "$OUT_DIR/.config" "$ROOT/configs/ksu.config"
     )
 fi
-"$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
-    --set-str LOCALVERSION "$LOCALVERSION" --disable LOCALVERSION_AUTO
+if [[ -n $LOCALVERSION ]]; then
+    "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
+        --set-str LOCALVERSION "$LOCALVERSION" --disable LOCALVERSION_AUTO
+fi
 make "${MAKE_ARGS[@]}" olddefconfig
 if (( BUILD_KSU )); then
     for option in KSU KSU_TAMPER_SYSCALL_TABLE; do
@@ -251,12 +255,12 @@ printf 'AnyKernel3 repo: %s\nAnyKernel3 ref: %s\nAnyKernel3 commit: %s\n' \
     "$(git -C "$WORK_DIR/anykernel" rev-parse HEAD)" >> "$LOG_DIR/manifest.txt"
 cp "$IMAGE" "$WORK_DIR/anykernel/Image.gz-dtb"
 
-KERNEL_VER=$(make -s "${MAKE_ARGS[@]}" kernelversion)
+KERNEL_VER=$(make -s "${MAKE_ARGS[@]}" kernelrelease)
 KERNEL_SHA=$(git -C "$KERNEL_DIR" rev-parse --short=12 HEAD)
 VARIANT=vanilla
 (( BUILD_KSU == 0 )) || VARIANT=KSU
-ZIP_NAME="$KERNEL_VER$LOCALVERSION-$VARIANT-$(date +%Y%m%d-%H%M%S)-$KERNEL_SHA.zip"
-[[ $ZIP_NAME != */* ]] || die "LOCALVERSION must not contain '/'"
+ZIP_NAME="$KERNEL_VER-$VARIANT-$(date +%Y%m%d-%H%M%S)-$KERNEL_SHA.zip"
+[[ $ZIP_NAME != */* ]] || die "Kernel release must not contain '/'"
 (
     cd "$WORK_DIR/anykernel"
     zip -q -r9 "$ARTIFACT_DIR/$ZIP_NAME" . \

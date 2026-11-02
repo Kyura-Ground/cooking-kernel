@@ -4,6 +4,9 @@ parameters:
   kernel-branch:
     type: string
     default: lineage-23.2
+  localversion:
+    type: string
+    default: ""
   build-ksu:
     type: boolean
     default: true
@@ -21,6 +24,7 @@ executors:
       USE_CCACHE: "1"
       TZ: Asia/Jakarta
       KERNEL_BRANCH: "<< pipeline.parameters.kernel-branch >>"
+      LOCALVERSION: "<< pipeline.parameters.localversion >>"
       BUILD_KSU: "<< pipeline.parameters.build-ksu >>"
       SIGN_ZIP: "<< pipeline.parameters.sign-zip >>"
 

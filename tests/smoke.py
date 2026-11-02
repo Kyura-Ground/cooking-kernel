@@ -27,6 +27,9 @@ example_branch = subprocess.check_output(
     ["bash", "-c", 'source "$1"; printf "%s" "$KERNEL_BRANCH"',
      "example-config", str(ROOT / "config.example.sh")], text=True)
 assert example_branch == DEFAULT_KERNEL_BRANCH, "Example config must select the LineageOS 23.2 source"
+assert pipeline["parameters"]["localversion"]["default"] == ""
+assert pipeline["executors"]["kernel-builder"]["environment"]["LOCALVERSION"] == \
+    "<< pipeline.parameters.localversion >>"
 
 
 def write(path, text, executable=False):
@@ -114,12 +117,13 @@ assert sys.argv[1]=='-jar' and pathlib.Path(sys.argv[2]).is_file()
 shutil.copy2(sys.argv[3],sys.argv[4])
 ''', True)
     write(mockbin / "make", '''#!/usr/bin/env python3
-import json,os,pathlib,sys
+import json,os,pathlib,re,sys
 a=sys.argv[1:];d=pathlib.Path(a[a.index('-C')+1]);o=pathlib.Path(next(x[2:] for x in a if x.startswith('O=')))
 assert 'CROSS_COMPILE=aarch64-linux-android-' in a
 assert 'CROSS_COMPILE_ARM32=arm-linux-androideabi-' in a
 assert 'CLANG_TRIPLE=aarch64-linux-gnu-' in a and 'LLVM_IAS=0' in a
 assert 'CC=clang -fdebug-default-version=4' in a
+assert 'LOCALVERSION=' in a
 with open(os.environ['CALL_LOG'],'a') as f:f.write(json.dumps(a)+'\\n')
 o.mkdir(parents=True,exist_ok=True)
 if 'X00TD_defconfig' in a:(o/'.config').write_text('CONFIG_LOCALVERSION="-lineageos"\\n')
@@ -130,7 +134,10 @@ elif 'Image.gz-dtb' in a:
     if os.environ.get('FAIL_BUILD')=='1':sys.exit(23)
     image=o/'arch/arm64/boot/Image.gz-dtb';image.parent.mkdir(parents=True,exist_ok=True)
     image.write_bytes(b'' if os.environ.get('EMPTY_IMAGE')=='1' else b'fixture-image')
-elif 'kernelversion' in a:print('4.4.302')
+elif 'kernelrelease' in a:
+    config=(o/'.config').read_text()
+    suffix=re.findall(r'^CONFIG_LOCALVERSION="(.*)"$',config,re.M)[-1]
+    print('4.4.302-cip115'+suffix)
 else:raise AssertionError(a)
 ''', True)
     # Use a minimal environment to ensure tests never invoke optional uploads.
@@ -189,6 +196,9 @@ else:raise AssertionError(a)
                 text=True).strip() == expected_sha
             assert expected_sha[:12] in zips[0].name
             config = (work / "out-zip/kernel.config").read_text()
+            suffix = overrides.get("LOCALVERSION") or "-lineageos"
+            assert f'CONFIG_LOCALVERSION="{suffix}"' in config
+            assert zips[0].name.startswith(f"4.4.302-cip115{suffix}-")
             if overrides.get("BUILD_KSU") == "false":
                 assert "CONFIG_KSU=y" not in config and not (work / "kernel-src/KernelSU").exists()
             else:
@@ -202,6 +212,10 @@ else:raise AssertionError(a)
     run("script-default-lineage23", {"KERNEL_BRANCH": None}, True)
     run("circleci-default-lineage23", {"KERNEL_BRANCH": pipeline_branch}, True)
     run("example-default-lineage23", {"KERNEL_BRANCH": example_branch}, True)
+    run("custom-kernel-name", {"LOCALVERSION": "-Custom"}, True)
+    run("empty-kernel-name", {"LOCALVERSION": ""}, True)
+    run("invalid-kernel-name", {"LOCALVERSION": "-bad/name"}, False,
+        "Kernel release must not contain '/'")
     run("ksu", {}, True)
     run("vanilla", {"BUILD_KSU": "false"}, True)
     run("signed-ksu", {"SIGN_ZIP": "true"}, True)

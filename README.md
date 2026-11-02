@@ -11,6 +11,7 @@ Default build:
 | Source | https://github.com/Kyura-Ground/android_kernel_asus_sdm660-4.4 |
 | Branch kernel | lineage-23.2 |
 | Defconfig | X00TD_defconfig |
+| Nama kernel | Mengikuti CONFIG_LOCALVERSION di defconfig repo kernel |
 | Clang | AOSP clang-r614150 (23.0.1), snapshot 747f0cceb48f48bf7cf497a3e01af1389266904b |
 | GNU cross tools | LineageOS GCC 4.9 ARM64 dan ARM32, revision dipatok di build.sh |
 | KernelSU | backslashxx/KernelSU, revision a7f37595dcf067791fc2c689047a651c19d6704c |
@@ -31,6 +32,7 @@ LTO, atau NoMount dari konfigurasi 4.19.
 | Parameter pipeline | Tipe | Default |
 | --- | --- | --- |
 | kernel-branch | string | lineage-23.2 |
+| localversion | string | kosong: ikuti nama dari defconfig kernel |
 | build-ksu | boolean | true |
 | sign-zip | boolean | true |
 
@@ -38,6 +40,11 @@ CircleCI mengekspor parameter `kernel-branch` sebagai `KERNEL_BRANCH`, sehingga
 nilainya mengalahkan fallback di `build.sh`. Mengganti fallback script saja
 tidak mengganti branch yang dipakai pipeline. Periksa juga parameter eksplisit
 pada trigger/API/schedule dan `config.sh` lama jika ada.
+
+Untuk mengganti nama kernel per build, isi parameter `localversion`, misalnya
+`-Custom`. Jika kosong, nama mengikuti defconfig repo kernel (saat ini
+`-Caffeinated` pada `lineage-23.2`). Nama ZIP mengikuti `kernelrelease` hasil
+build, termasuk suffix CIP dan nama kernel.
 
 Untuk LineageOS 23.2, pastikan log dan `build-manifest.txt` menyebut
 `Kernel ref: lineage-23.2` dan commit dari branch tersebut. ZIP dari commit
@@ -105,6 +112,13 @@ sehingga nilai yang ditulis di dalamnya menang atas environment/pipeline.
 Contoh override tanpa config.sh:
 
     BUILD_KSU=0 SIGN_ZIP=0 USE_CCACHE=0 JOBS=4 bash build.sh
+
+Untuk mengganti nama kernel secara lokal:
+
+    LOCALVERSION=-Custom bash build.sh
+
+Hapus override `LOCALVERSION` lama di `config.sh`, atau isi dengan string kosong,
+untuk mengikuti nama dari repo kernel.
 
 WORK_DIR dapat diarahkan ke direktori kerja baru dengan path absolut.
 Gunakan direktori baru untuk build ulang setelah KSU/patch diterapkan; builder
