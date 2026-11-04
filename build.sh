@@ -161,7 +161,7 @@ MAKE_ARGS=(
     CLANG_TRIPLE_ARM32=arm-linux-gnueabi-
     # The compat vDSO needs the full binutils prefix, not just the bin directory.
     "CLANG_PREFIX32=--prefix=$TOOLCHAIN_DIR/gcc-arm32/bin/arm-linux-androideabi-"
-    LLVM_IAS=0 HOSTCC=gcc HOSTCXX=g++
+    LLVM_IAS=1 HOSTCC=gcc HOSTCXX=g++
 )
 if (( USE_CCACHE )); then
     command -v ccache >/dev/null || die "USE_CCACHE=1 requires ccache"
@@ -171,9 +171,8 @@ if (( USE_CCACHE )); then
 else
     MAKE_ARGS+=("CC=clang -fdebug-default-version=4")
 fi
-# Keep GNU 4.9 binutils selected by CROSS_COMPILE; this builder uses LLVM_IAS=0.
-# Modern Clang defaults to DWARF 5, which those assemblers cannot read. Keep the
-# default on CC so the compat vDSO's separate flags also use DWARF 4 with -g.
+# Modern Clang emits ARM attributes unsupported by the GNU 4.9 assembler.
+# Keep DWARF 4 on CC; the compat vDSO still selects its ARM32 binutils.
 
 if [[ -d "$ROOT/patches" ]]; then
     for patch in "$ROOT/patches/"*.patch; do

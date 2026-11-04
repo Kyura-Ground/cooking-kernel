@@ -121,7 +121,7 @@ import json,os,pathlib,re,sys
 a=sys.argv[1:];d=pathlib.Path(a[a.index('-C')+1]);o=pathlib.Path(next(x[2:] for x in a if x.startswith('O=')))
 assert 'CROSS_COMPILE=aarch64-linux-android-' in a
 assert 'CROSS_COMPILE_ARM32=arm-linux-androideabi-' in a
-assert 'CLANG_TRIPLE=aarch64-linux-gnu-' in a and 'LLVM_IAS=0' in a
+assert 'CLANG_TRIPLE=aarch64-linux-gnu-' in a and 'LLVM_IAS=1' in a
 assert 'CC=clang -fdebug-default-version=4' in a
 assert 'LOCALVERSION=' in a
 with open(os.environ['CALL_LOG'],'a') as f:f.write(json.dumps(a)+'\\n')
