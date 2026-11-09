@@ -12,7 +12,7 @@ Default build:
 | Branch kernel | lineage-23.2 |
 | Defconfig | X00TD_defconfig |
 | Nama kernel | Mengikuti CONFIG_LOCALVERSION di defconfig repo kernel |
-| Clang | AOSP clang-r614150 (23.0.1), snapshot 747f0cceb48f48bf7cf497a3e01af1389266904b |
+| Clang | AOSP clang-r614150 (23.0.1), snapshot 16fae8ef5b856b1d3e02a55274e4327c5842bb34 |
 | GNU cross tools | LineageOS GCC 4.9 ARM64 dan ARM32, revision dipatok di build.sh |
 | KernelSU | backslashxx/KernelSU, revision a7f37595dcf067791fc2c689047a651c19d6704c |
 | AnyKernel3 | Kyura-Ground/AnyKernel3, branch 4.4 |
