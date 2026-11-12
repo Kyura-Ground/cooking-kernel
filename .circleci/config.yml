@@ -1,102 +1,56 @@
 version: 2.1
 
 parameters:
-  kernel-branch:
+  kernel-revision:
     type: string
-    default: lineage-23.2
-  localversion:
-    type: string
-    default: ""
-  build-ksu:
-    type: boolean
-    default: true
-  sign-zip:
-    type: boolean
-    default: true
-
-executors:
-  kernel-builder:
-    docker:
-      - image: ubuntu:22.04
-    working_directory: ~/project
-    resource_class: large
-    environment:
-      USE_CCACHE: "1"
-      TZ: Asia/Jakarta
-      KERNEL_BRANCH: "<< pipeline.parameters.kernel-branch >>"
-      LOCALVERSION: "<< pipeline.parameters.localversion >>"
-      BUILD_KSU: "<< pipeline.parameters.build-ksu >>"
-      SIGN_ZIP: "<< pipeline.parameters.sign-zip >>"
+    default: lineage-22.1
 
 jobs:
-  lint:
+  build:
     docker:
       - image: ubuntu:22.04
-    resource_class: small
+    resource_class: large
+    working_directory: ~/project
+    environment:
+      KERNEL_REVISION: << pipeline.parameters.kernel-revision >>
+      CCACHE_DIR: /root/project/.ccache-54
+      KBUILD_BUILD_USER: Kyura
+      KBUILD_BUILD_HOST: circleci
+      TZ: Asia/Jakarta
     steps:
       - run:
-          name: Install lint and checkout dependencies
-          command: |
-            apt-get update
-            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-              ca-certificates git openssh-client shellcheck python3 python3-yaml curl zip unzip
-      - checkout
-      - run:
-          name: Validate shell scripts and YAML
-          command: |
-            bash -n build.sh config.example.sh
-            shellcheck build.sh config.example.sh
-            python3 -c 'import yaml; yaml.safe_load(open(".circleci/config.yml"))'
-            python3 tests/smoke.py
-
-  build:
-    executor: kernel-builder
-    steps:
-      - run:
-          name: Install kernel 4.4 build dependencies
+          name: Install Linux 5.4 build dependencies
           command: |
             apt-get update
             DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
               ca-certificates git openssh-client bc bison build-essential flex \
-              libssl-dev libelf-dev libncurses5 libtinfo5 python3 python-is-python3 curl \
-              cpio zip unzip default-jre-headless ccache tzdata
+              libssl-dev libelf-dev clang-14 llvm-14 lld-14 \
+              binutils-aarch64-linux-gnu gcc-arm-linux-gnueabi \
+              ccache python3 curl cpio gzip tar shellcheck
       - checkout
-      - restore_cache:
-          keys:
-            - kernel44-toolchains-v1-{{ arch }}-{{ checksum "build.sh" }}-
-            - kernel44-toolchains-v1-{{ arch }}-
-      - restore_cache:
-          keys:
-            - kernel44-ccache-v1-{{ .Branch }}-{{ checksum "build.sh" }}-
       - run:
-          name: Build X00TD Linux 4.4 and package AnyKernel3
+          name: Validate the 5.4 build script
+          command: bash -n scripts/build-5.4.sh && shellcheck scripts/build-5.4.sh
+      - restore_cache:
+          keys:
+            - kernel54-ccache-v1-{{ checksum "scripts/build-5.4.sh" }}-
+      - run:
+          name: Build X00TD Linux 5.4 image, DTB and modules
           no_output_timeout: 30m
-          command: bash build.sh
-      - run:
-          name: Show compiler cache statistics
-          when: always
-          command: CCACHE_DIR="$PWD/.ccache" ccache --show-stats
+          command: bash scripts/build-5.4.sh
       - save_cache:
-          key: kernel44-toolchains-v1-{{ arch }}-{{ checksum "build.sh" }}-{{ epoch }}
+          key: kernel54-ccache-v1-{{ checksum "scripts/build-5.4.sh" }}-{{ epoch }}
           when: always
           paths:
-            - .toolchains
-      - save_cache:
-          key: kernel44-ccache-v1-{{ .Branch }}-{{ checksum "build.sh" }}-{{ epoch }}
-          when: always
-          paths:
-            - .ccache
+            - .ccache-54
       - store_artifacts:
-          path: out-zip
-          destination: KERNEL-BUILDS
+          path: artifacts-54
+          destination: X00TD-5.4
       - store_artifacts:
-          path: logs
+          path: logs-54
           destination: BUILD-LOGS
 
 workflows:
-  kernel44-workflow:
+  kernel54-workflow:
     jobs:
-      - lint
-      - build:
-          requires:
-            - lint
+      - build
