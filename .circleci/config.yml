@@ -9,7 +9,7 @@ jobs:
   build:
     docker:
       - image: ubuntu:22.04
-    resource_class: large
+    resource_class: xlarge
     working_directory: ~/project
     environment:
       KERNEL_REVISION: << pipeline.parameters.kernel-revision >>
@@ -34,6 +34,7 @@ jobs:
       - restore_cache:
           keys:
             - kernel54-ccache-v1-{{ checksum "scripts/build-5.4.sh" }}-
+            - kernel54-ccache-v1-
       - run:
           name: Build X00TD Linux 5.4 image, DTB and modules
           no_output_timeout: 30m

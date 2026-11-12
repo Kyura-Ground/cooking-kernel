@@ -43,6 +43,21 @@ MAKE_ARGS=(
 )
 
 make "${MAKE_ARGS[@]}" vendor/asus/X00TD_defconfig
+for option in ARCH_SDM660 QCOM_BUS_SCALING MSMB_CAMERA MSM_CAMERA_SENSOR \
+    MSM_CPP MSM_CCI MSM_CSIPHY MSM_CSID MSMB_JPEG SND_SOC_SDM660 \
+    SND_SOC_INT_CODEC SND_SOC_QDSP6V2 QCOM_SOUNDWIRE SND_SOC_QCOM_WCD9335 \
+    MSM_ADSP_LOADER QPNP_SMB2 QPNP_FG_GEN3 MMC_CRYPTO DRM_MSM; do
+    grep -qx "CONFIG_$option=y" "$OUT_DIR/.config" || {
+        printf 'Required X00TD driver was discarded by Kconfig: %s\n' "$option" >&2
+        exit 1
+    }
+done
+for option in SOUNDWIRE SND_SOC_WCD9335; do
+    if grep -qx "CONFIG_$option=y" "$OUT_DIR/.config"; then
+        printf 'Conflicting upstream/vendor provider selected: %s\n' "$option" >&2
+        exit 1
+    fi
+done
 # Android normally supplies this public development trust anchor to Kbuild.
 cp "$ROOT/configs/verity.x509.pem" "$OUT_DIR/verity.x509.pem"
 make "${MAKE_ARGS[@]}" -j"$(nproc)" Image.gz-dtb modules
