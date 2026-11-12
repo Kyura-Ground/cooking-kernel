@@ -7,6 +7,7 @@ OUT_DIR="$KERNEL_DIR/out"
 LOG_DIR="$ROOT/logs-54"
 ARTIFACT_DIR="$ROOT/artifacts-54"
 KERNEL_REVISION=${KERNEL_REVISION:-lineage-22.1}
+export PATH="/usr/lib/llvm-14/bin:$PATH"
 mkdir -p "$LOG_DIR" "$ARTIFACT_DIR"
 exec > >(tee "$LOG_DIR/build.log") 2>&1
 
@@ -37,6 +38,7 @@ MAKE_ARGS=(
     LD=ld.lld-14 AR=llvm-ar-14 NM=llvm-nm-14
     STRIP=llvm-strip-14 OBJCOPY=llvm-objcopy-14 OBJDUMP=llvm-objdump-14
     CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
+    CC_COMPAT=arm-linux-gnueabi-gcc
     CLANG_TRIPLE=aarch64-linux-gnu- LLVM_IAS=1
 )
 
