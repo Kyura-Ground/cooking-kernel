@@ -60,7 +60,8 @@ for option in SOUNDWIRE SND_SOC_WCD9335; do
 done
 # Android normally supplies this public development trust anchor to Kbuild.
 cp "$ROOT/configs/verity.x509.pem" "$OUT_DIR/verity.x509.pem"
-make "${MAKE_ARGS[@]}" -j"$(nproc)" Image.gz-dtb modules
+# -k: keep going so one CI run reports every remaining compile error
+make "${MAKE_ARGS[@]}" -k -j"$(nproc)" Image.gz-dtb modules
 test -s "$OUT_DIR/arch/arm64/boot/Image.gz-dtb"
 test -s "$OUT_DIR/vmlinux"
 
