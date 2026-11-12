@@ -46,7 +46,7 @@ make "${MAKE_ARGS[@]}" vendor/asus/X00TD_defconfig
 for option in ARCH_SDM660 QCOM_BUS_SCALING MSMB_CAMERA MSM_CAMERA_SENSOR \
     MSM_CPP MSM_CCI MSM_CSIPHY MSM_CSID MSMB_JPEG SND_SOC_SDM660 \
     SND_SOC_INT_CODEC SND_SOC_QDSP6V2 QCOM_SOUNDWIRE SND_SOC_QCOM_WCD9335 \
-    MSM_ADSP_LOADER QPNP_SMB2 QPNP_FG_GEN3 MMC_CRYPTO DRM_MSM; do
+    MSM_ADSP_LOADER QPNP_SMB2 QPNP_FG_GEN3 MMC_CRYPTO; do
     grep -qx "CONFIG_$option=y" "$OUT_DIR/.config" || {
         printf 'Required X00TD driver was discarded by Kconfig: %s\n' "$option" >&2
         exit 1
