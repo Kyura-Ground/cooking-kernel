@@ -6,7 +6,7 @@ KERNEL_DIR="$ROOT/kernel-src-54"
 OUT_DIR="$KERNEL_DIR/out"
 LOG_DIR="$ROOT/logs-54"
 ARTIFACT_DIR="$ROOT/artifacts-54"
-KERNEL_REVISION=${KERNEL_REVISION:-lineage-22.1}
+KERNEL_REVISION=${KERNEL_REVISION:-lineage-24.0}
 export PATH="/usr/lib/llvm-14/bin:$PATH"
 mkdir -p "$LOG_DIR" "$ARTIFACT_DIR"
 exec > >(tee "$LOG_DIR/build.log") 2>&1

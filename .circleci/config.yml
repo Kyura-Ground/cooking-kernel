@@ -3,7 +3,7 @@ version: 2.1
 parameters:
   kernel-revision:
     type: string
-    default: lineage-22.1
+    default: lineage-24.0
 
 jobs:
   build:
