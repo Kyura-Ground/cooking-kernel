@@ -43,6 +43,10 @@ MAKE_ARGS=(
 )
 
 make "${MAKE_ARGS[@]}" vendor/asus/X00TD_defconfig
+# Mirror the device tree: BoardConfig passes the debugfs fragment on top of the
+# defconfig, so exercise the same merge here instead of testing a config the ROM
+# never builds.
+make "${MAKE_ARGS[@]}" vendor/debugfs.config
 for option in ARCH_SDM660 QCOM_BUS_SCALING MSMB_CAMERA MSM_CAMERA_SENSOR \
     MSM_CPP MSM_CCI MSM_CSIPHY MSM_CSID MSMB_JPEG SND_SOC_SDM660 \
     SND_SOC_INT_CODEC SND_SOC_QDSP6V2 QCOM_SOUNDWIRE SND_SOC_QCOM_WCD9335 \
