@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 TOOLS_DIR=$1
-ANYKERNEL_SHA=c1b8071111bba4a3833758d04d5c6b38fa3b1df7
+ANYKERNEL_SHA=fafee4a00ff19ce41f1e62b9549eafe980402ba7
 SIGNER_SHA=0239ba28e54b7b4c920a236785b5fcff271c73ed
 SIGNER_HASH=efc382651dadd4b47ed3e669a5fb17e1a5cacab2b65c0736c65246f442a4c19f
 mkdir -p "$TOOLS_DIR"
@@ -11,6 +11,7 @@ git -C "$TOOLS_DIR/anykernel" remote add origin https://github.com/Kyura-Ground/
 git -C "$TOOLS_DIR/anykernel" fetch --depth=1 origin "$ANYKERNEL_SHA"
 git -C "$TOOLS_DIR/anykernel" checkout -q --detach FETCH_HEAD
 [[ $(git -C "$TOOLS_DIR/anykernel" rev-parse HEAD) == "$ANYKERNEL_SHA" ]]
+python3 "$TOOLS_DIR/anykernel/tests/mount.py"
 printf '%s\n' "$ANYKERNEL_SHA" > "$TOOLS_DIR/anykernel-commit.txt"
 curl --fail --silent --show-error --location --retry 3 \
     "https://raw.githubusercontent.com/Magisk-Modules-Repo/zipsigner/$SIGNER_SHA/bin/zipsigner-3.0-dexed.jar" \

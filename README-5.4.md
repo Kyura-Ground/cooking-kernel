@@ -20,12 +20,18 @@ for the kernel's existing SYSTEM_TRUSTED_KEYS setting; signature checks remain
 enabled. Production Android builds must supply their intended trust anchor.
 
 After a successful build, `scripts/package-5.4.sh` creates the installable
-`artifacts-54/X00TD-5.4-<kernel-commit>-recovery.zip` using the same AnyKernel3
+`artifacts-54/X00TD-5.4-<kernel-commit>-ak3-<installer-commit>-recovery.zip` using the same AnyKernel3
 repository and signing approach as `lineage-23.2`. Sideload this ZIP in recovery
 to update the kernel in both recovery and boot. It preserves each image's
 ramdisk and boot header, checks that both installed images already use Linux
 5.4, and verifies each write by reading it back. No ROM reinstall or data wipe
 is part of this installer. It is not a migration package for a 4.4 ROM/recovery.
+
+The 5.4 AnyKernel backend detects already-mapped retrofit partitions, including
+X00TD's layout with super metadata in physical system. Its mount resolver is
+tested for retrofit, dedicated-super, slotted dynamic and static layouts.
+The installer revision is included in the filename and ZIP manifest so an
+installer-only fix can be distinguished from an older ZIP of the same kernel.
 
 The AnyKernel3 revision and ZipSigner are pinned and the signer download is
 verified by SHA256 in `scripts/prepare-installer-5.4.sh`. Signing uses the

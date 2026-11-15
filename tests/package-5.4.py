@@ -10,6 +10,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 SHA = "0123456789abcdef0123456789abcdef01234567"
+ANYKERNEL_SHA = "fafee4a00ff19ce41f1e62b9549eafe980402ba7"
 PAYLOAD = {
     "Image.gz-dtb": b"kernel fixture",
     "sdm636-qrd-X00TD.dtb": b"dtb fixture",
@@ -58,10 +59,9 @@ shutil.copyfile(sys.argv[3], sys.argv[4])
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("AnyKernel fixture: " + filename)
     (tools / "zipsigner.jar").write_bytes(b"signer fixture")
-    (tools / "anykernel-commit.txt").write_text("c1b8071111bba4a3833758d04d5c6b38fa3b1df7\n")
 
     def run(name, mode=None, missing_image=False, bad_revision=False, stale_zip=False,
-            signer_failure=False):
+            signer_failure=False, bad_installer_revision=False):
         case = tmp / name
         artifacts, logs = case / "artifacts with spaces", case / "logs"
         artifacts.mkdir(parents=True)
@@ -76,7 +76,9 @@ shutil.copyfile(sys.argv[3], sys.argv[4])
         if missing_image:
             (artifacts / "Image.gz-dtb").unlink()
         archive = artifacts / f"X00TD-5.4-{SHA[:12]}.zip"
-        installer = artifacts / f"X00TD-5.4-{SHA[:12]}-recovery.zip"
+        installer = artifacts / f"X00TD-5.4-{SHA[:12]}-ak3-{ANYKERNEL_SHA[:12]}-recovery.zip"
+        (tools / "anykernel-commit.txt").write_text(
+            "bad/ref" if bad_installer_revision else ANYKERNEL_SHA + "\n")
         if stale_zip:
             with zipfile.ZipFile(archive, "w") as zipped:
                 zipped.writestr("stale.txt", "must not survive")
@@ -93,8 +95,8 @@ shutil.copyfile(sys.argv[3], sys.argv[4])
         output = result.stdout + result.stderr
         assert "test-only-token" not in output, output
         assert (result.returncode == 0) == (not missing_image and not bad_revision
-                                         and not signer_failure), output
-        if missing_image or bad_revision:
+                                         and not signer_failure and not bad_installer_revision), output
+        if missing_image or bad_revision or bad_installer_revision:
             assert not archive.exists() and not call.exists()
         elif signer_failure:
             assert archive.exists() and not installer.exists() and not call.exists()
@@ -113,6 +115,7 @@ shutil.copyfile(sys.argv[3], sys.argv[4])
                 assert zipped.read("Image.gz-dtb") == PAYLOAD["Image.gz-dtb"]
                 assert zipped.read("source-revision.txt").decode().strip() == SHA
                 recipe = zipped.read("anykernel.sh").decode()
+                assert zipped.read("anykernel-revision.txt").decode().strip() == ANYKERNEL_SHA
                 assert SHA in recipe and "@KERNEL_SHA@" not in recipe
                 assert "/by-name/boot" in recipe and "/by-name/recovery" in recipe
                 assert "vmlinux.gz" not in zipped.namelist()
@@ -126,6 +129,7 @@ shutil.copyfile(sys.argv[3], sys.argv[4])
                 args = json.loads(call.read_text())
                 caption = next(arg for arg in args if arg.startswith("caption="))
                 assert SHA in caption
+                assert ANYKERNEL_SHA in caption
                 assert hashlib.sha256(installer.read_bytes()).hexdigest() in caption
                 assert any(str(installer) in arg for arg in args)
                 assert ("Telegram upload ok" in output) == (mode == "ok"), output
@@ -144,3 +148,4 @@ shutil.copyfile(sys.argv[3], sys.argv[4])
     run("invalid-revision", bad_revision=True)
     run("replace-stale-zip", stale_zip=True)
     run("signer-failure", "ok", signer_failure=True)
+    run("invalid-installer-revision", bad_installer_revision=True)

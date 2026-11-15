@@ -6,8 +6,13 @@ ARTIFACT_DIR=$(cd -- "$1" && pwd)
 LOG_DIR=$(cd -- "$2" && pwd)
 TOOLS_DIR=$(cd -- "$3" && pwd)
 KERNEL_SHA=$(cat "$LOG_DIR/source-revision.txt")
+ANYKERNEL_SHA=$(cat "$TOOLS_DIR/anykernel-commit.txt")
 [[ $KERNEL_SHA =~ ^[0-9a-f]{40}$ ]] || {
     printf 'Invalid kernel source revision\n' >&2
+    exit 1
+}
+[[ $ANYKERNEL_SHA =~ ^[0-9a-f]{40}$ ]] || {
+    printf 'Invalid installer source revision\n' >&2
     exit 1
 }
 cp "$LOG_DIR/source-revision.txt" "$LOG_DIR/toolchain.txt" "$ARTIFACT_DIR/"
@@ -39,11 +44,12 @@ sed "s/@KERNEL_SHA@/$KERNEL_SHA/g" "$ROOT/configs/anykernel-5.4.sh" \
     > "$PACKAGE_TMP/installer/anykernel.sh"
 cp "$ARTIFACT_DIR/Image.gz-dtb" "$PACKAGE_TMP/installer/"
 cp "$LOG_DIR/source-revision.txt" "$PACKAGE_TMP/installer/"
+cp "$TOOLS_DIR/anykernel-commit.txt" "$PACKAGE_TMP/installer/anykernel-revision.txt"
 (
     cd "$PACKAGE_TMP/installer"
     zip -q -r9 "$PACKAGE_TMP/installer-unsigned.zip" .
 )
-ZIP_NAME="X00TD-5.4-${KERNEL_SHA:0:12}-recovery.zip"
+ZIP_NAME="X00TD-5.4-${KERNEL_SHA:0:12}-ak3-${ANYKERNEL_SHA:0:12}-recovery.zip"
 ZIP_PATH="$ARTIFACT_DIR/$ZIP_NAME"
 rm -f -- "$ZIP_PATH"
 java -jar "$TOOLS_DIR/zipsigner.jar" "$PACKAGE_TMP/installer-unsigned.zip" "$ZIP_PATH"
@@ -63,6 +69,7 @@ fi
 ZIP_SHA=$(sha256sum "$ZIP_PATH" | cut -d' ' -f1)
 CAPTION="X00TD Linux 5.4 recovery installer (boot + recovery)
 Kernel commit: $KERNEL_SHA
+Installer commit: $ANYKERNEL_SHA
 SHA256: $ZIP_SHA"
 RESPONSE="$PACKAGE_TMP/telegram-response.json"
 printf 'Uploading ZIP to Telegram\n'
