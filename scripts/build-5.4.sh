@@ -77,3 +77,4 @@ gzip -c "$OUT_DIR/vmlinux" > "$ARTIFACT_DIR/vmlinux.gz"
     cd "$ARTIFACT_DIR"
     sha256sum Image.gz-dtb sdm636-qrd-X00TD.dtb vmlinux.gz modules.tar.gz > SHA256SUMS
 )
+bash "$ROOT/scripts/package-5.4.sh" "$ARTIFACT_DIR" "$LOG_DIR"

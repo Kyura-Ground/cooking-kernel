@@ -19,5 +19,18 @@ Only the public certificate is included. CI supplies it in the output directory
 for the kernel's existing SYSTEM_TRUSTED_KEYS setting; signature checks remain
 enabled. Production Android builds must supply their intended trust anchor.
 
-This workflow proves compilation and linkage. It does not package a flashable
-ZIP or claim that incomplete hardware drivers have been validated on X00TD.
+After a successful build, `scripts/package-5.4.sh` creates
+`artifacts-54/X00TD-5.4-<kernel-commit>.zip` with the kernel image, X00TD DTB,
+configuration, symbols, modules, source revision and toolchain information.
+The ZIP checksum is appended to `artifacts-54/SHA256SUMS`. `vmlinux.gz` stays
+in the CircleCI artifacts outside the ZIP to keep the Telegram upload small.
+
+Set the existing CircleCI project environment variables `TG_BOT_TOKEN` and
+`TG_CHAT_ID`, as on `lineage-23.2`, to upload the ZIP using Telegram
+`sendDocument`. The caption includes the full kernel commit and ZIP SHA256.
+Missing credentials skip the upload; an upload error leaves the build artifacts
+available in CircleCI. Tokens and API responses are not printed to build logs.
+
+This ZIP is a build archive for recovery repacking, without an installer that
+writes the boot partition. The workflow proves compilation and linkage; it
+does not validate hardware drivers or a working recovery on X00TD.
