@@ -26,14 +26,15 @@ jobs:
               ca-certificates git openssh-client bc bison build-essential flex \
               libssl-dev libelf-dev clang-14 llvm-14 lld-14 \
               binutils-aarch64-linux-gnu gcc-arm-linux-gnueabi \
-              ccache python3 curl cpio gzip tar zip unzip shellcheck
+              ccache python3 curl cpio gzip tar zip unzip shellcheck openjdk-17-jre-headless
       - checkout
       - run:
           name: Validate the 5.4 build script
           command: |
-            bash -n scripts/build-5.4.sh scripts/package-5.4.sh
-            shellcheck scripts/build-5.4.sh scripts/package-5.4.sh
+            bash -n scripts/build-5.4.sh scripts/package-5.4.sh scripts/prepare-installer-5.4.sh configs/anykernel-5.4.sh
+            shellcheck scripts/build-5.4.sh scripts/package-5.4.sh scripts/prepare-installer-5.4.sh configs/anykernel-5.4.sh
             python3 tests/package-5.4.py
+            python3 tests/installer-5.4.py
       - restore_cache:
           keys:
             - kernel54-ccache-v1-{{ checksum "scripts/build-5.4.sh" }}-

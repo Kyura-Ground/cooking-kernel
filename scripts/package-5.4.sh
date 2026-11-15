@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 ARTIFACT_DIR=$(cd -- "$1" && pwd)
 LOG_DIR=$(cd -- "$2" && pwd)
+TOOLS_DIR=$(cd -- "$3" && pwd)
 KERNEL_SHA=$(cat "$LOG_DIR/source-revision.txt")
 [[ $KERNEL_SHA =~ ^[0-9a-f]{40}$ ]] || {
     printf 'Invalid kernel source revision\n' >&2
@@ -27,6 +29,28 @@ FILES=(Image.gz-dtb sdm636-qrd-X00TD.dtb .config System.map Module.symvers
 )
 printf 'Packaged %s\n' "$ZIP_NAME"
 
+PACKAGE_TMP=$(mktemp -d)
+trap 'rm -rf -- "$PACKAGE_TMP"' EXIT
+cp "$TOOLS_DIR/anykernel-commit.txt" "$LOG_DIR/"
+mkdir "$PACKAGE_TMP/installer"
+cp -a "$TOOLS_DIR/anykernel/META-INF" "$TOOLS_DIR/anykernel/tools" \
+    "$TOOLS_DIR/anykernel/LICENSE" "$PACKAGE_TMP/installer/"
+sed "s/@KERNEL_SHA@/$KERNEL_SHA/g" "$ROOT/configs/anykernel-5.4.sh" \
+    > "$PACKAGE_TMP/installer/anykernel.sh"
+cp "$ARTIFACT_DIR/Image.gz-dtb" "$PACKAGE_TMP/installer/"
+cp "$LOG_DIR/source-revision.txt" "$PACKAGE_TMP/installer/"
+(
+    cd "$PACKAGE_TMP/installer"
+    zip -q -r9 "$PACKAGE_TMP/installer-unsigned.zip" .
+)
+ZIP_NAME="X00TD-5.4-${KERNEL_SHA:0:12}-recovery.zip"
+ZIP_PATH="$ARTIFACT_DIR/$ZIP_NAME"
+rm -f -- "$ZIP_PATH"
+java -jar "$TOOLS_DIR/zipsigner.jar" "$PACKAGE_TMP/installer-unsigned.zip" "$ZIP_PATH"
+unzip -tq "$ZIP_PATH"
+sha256sum "$ZIP_PATH" >> "$ARTIFACT_DIR/SHA256SUMS"
+printf 'Packaged recovery installer %s\n' "$ZIP_NAME"
+
 if [[ -z ${TG_BOT_TOKEN:-} || -z ${TG_CHAT_ID:-} ]]; then
     printf 'Telegram credentials not set, skipping upload.\n'
     exit 0
@@ -37,11 +61,10 @@ if (( $(stat -c %s "$ZIP_PATH") > 50000000 )); then
 fi
 
 ZIP_SHA=$(sha256sum "$ZIP_PATH" | cut -d' ' -f1)
-CAPTION="X00TD Linux 5.4 build
+CAPTION="X00TD Linux 5.4 recovery installer (boot + recovery)
 Kernel commit: $KERNEL_SHA
 SHA256: $ZIP_SHA"
-RESPONSE=$(mktemp)
-trap 'rm -f -- "$RESPONSE"' EXIT
+RESPONSE="$PACKAGE_TMP/telegram-response.json"
 printf 'Uploading ZIP to Telegram\n'
 if curl --silent --fail --max-time 300 \
     --output "$RESPONSE" \
