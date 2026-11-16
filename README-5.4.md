@@ -17,6 +17,12 @@ read-only permissions, freezing and writer-counter cleanup. It creates only
 anonymous maps and attaches nothing to networking. It is retained as a separate
 CircleCI artifact with a SHA256 checksum and is not installed by the kernel ZIP.
 
+`bpf-ringbuf-probe` checks ring-buffer creation, mmap permissions and bounds,
+polling, all five ringbuf helpers and verifier rejection of invalid accesses,
+unreleased references, nullable pointer arithmetic and shifted release pointers.
+It runs programs only through BPF_PROG_TEST_RUN, without network attachment or
+pinning. Run it as root in recovery; it is a separate checksummed CI artifact.
+
 `configs/verity.x509.pem` is the public AOSP development certificate from:
 https://android.googlesource.com/platform/build/+/android-10.0.0_r1/target/product/security/verity.x509.pem
 
