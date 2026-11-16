@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the actual kernel legacy-bus functions with host-side API fixtures in CI."""
+"""Run actual KGSL bus and A5xx initialization with host API fixtures in CI."""
 
 from pathlib import Path
 import subprocess
@@ -10,9 +10,9 @@ import tempfile
 kernel = Path(sys.argv[1])
 
 
-def function(path, name):
+def function(path, name, signature="static int"):
     source = (kernel / "drivers/gpu/msm" / path).read_text()
-    start = source.index("static int " + name + "(")
+    start = source.index(signature + " " + name + "(")
     opening = source.index("{", start)
     depth = 1
     end = opening + 1
@@ -95,6 +95,48 @@ static int icc_set_bw(void *p, u32 ab, u32 ib) {
     assert(p == (void *)1); icc_votes++; last_ab = ab; last_ib = ib;
     return vote_error;
 }
+
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+#define ADRENO_GPMU 1
+#define ADRENO_FEATURE(a, f) ((void)(a), (void)(f), has_gpmu)
+#define KGSL_MEMFLAGS_GPUREADONLY 1
+#define KGSL_MEMDESC_PRIVILEGED 2
+#define IS_ERR(p) ((intptr_t)(p) < 0)
+#define REG_PAIR_COUNT(a, i) ((a)[2 * (i) + 1] - (a)[2 * (i)] + 1)
+#define A5XX_NUM_SHADER_BANKS 4
+struct kgsl_memdesc { u64 gpuaddr; void *hostptr; };
+struct a5xx_shader_block { unsigned int sz; };
+struct a5xx_hlsq_sp_tp_regs { unsigned int size; };
+static struct kgsl_memdesc *capturescript, *registers, *owned[2];
+static int has_gpmu, global_attempts, global_successes, fail_global;
+static const unsigned int a5xx_registers[] = {0x10, 0x11};
+static const unsigned int a5xx_gpmu_registers[] = {0x20, 0x21};
+static struct a5xx_shader_block a5xx_shader_blocks[] = {{2}};
+static struct a5xx_hlsq_sp_tp_regs a5xx_hlsq_sp_tp_registers[] = {{2}};
+static struct kgsl_memdesc *kgsl_allocate_global(struct kgsl_device *device,
+        u64 size, u32 padding, u64 flags, u32 priv, const char *name) {
+    assert(device && size && padding == 0 && priv == KGSL_MEMDESC_PRIVILEGED);
+    assert(flags == (strcmp(name, "capturescript") ? 0 : KGSL_MEMFLAGS_GPUREADONLY));
+    if (++global_attempts == fail_global) return (void *)(intptr_t)-ENOMEM;
+    assert(global_successes < 2);
+    struct kgsl_memdesc *m = calloc(1, sizeof(*m));
+    assert(m); m->hostptr = calloc(1, size); assert(m->hostptr);
+    m->gpuaddr = 0x1000 * (global_successes + 1);
+    owned[global_successes++] = m;
+    return m;
+}
+static int _a5xx_crashdump_init_shader(struct a5xx_shader_block *block,
+        uint64_t *ptr, uint64_t *offset) {
+    memset(ptr, 0, 32 * A5XX_NUM_SHADER_BANKS);
+    *offset += block->sz * sizeof(unsigned int) * A5XX_NUM_SHADER_BANKS;
+    return 4 * A5XX_NUM_SHADER_BANKS;
+}
+static int _a5xx_crashdump_init_hlsq(struct a5xx_hlsq_sp_tp_regs *regs,
+        uint64_t *ptr, uint64_t *offset) {
+    memset(ptr, 0, 32);
+    *offset += regs->size * sizeof(unsigned int);
+    return 4;
+}
 '''
 
 tests = r'''
@@ -152,6 +194,35 @@ int main(void) {
     assert(adreno_interconnect_bus_set(&adreno, 0, 0) == -EIO);
     assert(pwr->cur_buslevel == 1 && pwr->cur_ab == 25);
     puts("PASS: actual KGSL legacy table parsing, BW units, bounds, cleanup and vote retries");
+    for (has_gpmu = 0; has_gpmu <= 1; has_gpmu++) {
+        for (fail_global = 0; fail_global <= 2; fail_global++) {
+            int failure = fail_global;
+            global_attempts = global_successes = 0;
+            capturescript = registers = NULL;
+            a5xx_crashdump_init(&adreno);
+            if (failure == 1) {
+                assert(IS_ERR(capturescript) && registers == NULL);
+                assert(global_attempts == 1 && global_successes == 0);
+            } else if (failure == 2) {
+                assert(!IS_ERR_OR_NULL(capturescript) && IS_ERR(registers));
+                assert(global_attempts == 2 && global_successes == 1);
+            }
+            struct kgsl_memdesc *saved = capturescript;
+            fail_global = 0;
+            a5xx_crashdump_init(&adreno);
+            assert(!IS_ERR_OR_NULL(capturescript) && !IS_ERR_OR_NULL(registers));
+            assert(capturescript->hostptr && registers->hostptr);
+            assert(global_successes == 2 && global_attempts == (failure ? 3 : 2));
+            if (failure == 2) assert(capturescript == saved);
+            a5xx_crashdump_init(&adreno);
+            assert(global_attempts == (failure ? 3 : 2));
+            for (int i = 0; i < global_successes; i++) {
+                free(owned[i]->hostptr); free(owned[i]);
+            }
+            fail_global = failure;
+        }
+    }
+    puts("PASS: actual A5xx crashdump first init, allocation failures, retries and reuse");
 }
 '''
 
@@ -163,6 +234,8 @@ with tempfile.TemporaryDirectory(prefix="kgsl-legacy-test-") as directory:
         + function("kgsl_bus.c", "kgsl_bus_init_legacy")
         + "\n"
         + function("adreno.c", "adreno_interconnect_bus_set")
+        + "\n"
+        + function("adreno_a5xx_snapshot.c", "a5xx_crashdump_init", "void")
         + "\n"
         + tests
     )
