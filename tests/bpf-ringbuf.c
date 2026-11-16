@@ -4,6 +4,7 @@
 #include <linux/btf.h>
 #include <poll.h>
 #include <stdint.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -139,10 +140,26 @@ static void cgroup_socket(void)
 		require(prog >= 0, "load cgroup socket cookie program");
 		close(prog);
 	}
+	struct bpf_insn skb_storage[] = {
+		I(BPF_LDX | BPF_DW | BPF_MEM, 2, 1, offsetof(struct __sk_buff, sk), 0),
+		I(BPF_JMP | BPF_JEQ | BPF_K, 2, 0, 5, 0),
+		I(BPF_LD | BPF_DW | BPF_IMM, 1, BPF_PSEUDO_MAP_FD, 0, fd), I(0, 0, 0, 0, 0),
+		MOV(3, 0), MOV(4, 0), CALL(BPF_FUNC_sk_storage_get), MOV(0, 1), EXIT(),
+	};
+	prog = load(skb_storage, COUNT(skb_storage), BPF_PROG_TYPE_CGROUP_SKB,
+		    BPF_CGROUP_INET_INGRESS);
+	require(prog >= 0, "load skb sock_common storage get program");
+	close(prog);
+	skb_storage[6] = CALL(BPF_FUNC_sk_storage_delete);
+	prog = load(skb_storage, COUNT(skb_storage), BPF_PROG_TYPE_CGROUP_SKB,
+		    BPF_CGROUP_INET_INGRESS);
+	require(prog >= 0, "load skb sock_common storage delete program");
+	close(prog);
 	close(fd);
 	close(btf_fd);
 	verifier_log[0] = 0;
 	puts("PASS: cgroup socket create/release ABI, storage context and cookie helpers (load only)");
+	puts("PASS: skb sock_common storage get/delete helper programs (load only)");
 }
 
 int main(void)

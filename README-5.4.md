@@ -24,6 +24,8 @@ It runs programs only through BPF_PROG_TEST_RUN, without network attachment or
 pinning. Run it as root in recovery; it is a separate checksummed CI artifact.
 It also loads unbound cgroup socket create/release programs to verify socket
 storage and cookie helper access. The probe raises only its own memlock limit.
+Load-only cgroup skb programs also check storage get/delete with the
+`sock_common` pointer returned by `skb->sk` after its required null check.
 
 `configs/verity.x509.pem` is the public AOSP development certificate from:
 https://android.googlesource.com/platform/build/+/android-10.0.0_r1/target/product/security/verity.x509.pem
