@@ -252,3 +252,15 @@ assert 'compatible = "qcom,pil-tz-scm-pas"' in (
     kernel / "arch/arm64/boot/dts/vendor/qcom/sdm660.dtsi").read_text(), \
     "pil-tz-scm-pas node missing"
 print("PASS: SCM PAS bus voting optional and pil-tz-scm-pas node present")
+
+# A512 hangs on the first submission when the CP protection window for the
+# SMMU aperture is encoded in bytes instead of dwords, and the fault handler
+# dereferences a NULL gx_is_on() callback on targets without a GX rail.
+adreno_a5xx = (kernel / "drivers/gpu/msm/adreno_a5xx.c").read_text()
+assert "_setprotectreg(device, reg + 1, (0x40000 >> 2)" in adreno_a5xx, \
+    "A5xx SMMU CP protection window is not dword encoded"
+assert "gpudev->gx_is_on == NULL" in (kernel / "drivers/gpu/msm/adreno.c").read_text(), \
+    "adreno_gx_is_on() lacks the no-GX-rail guard"
+a512 = (kernel / "drivers/gpu/msm/adreno-gpulist.h").read_text()
+assert a512.count(".vbif = a540_vbif_regs") == 2, "a512 VBIF programming missing"
+print("PASS: A512 CP protection window, gx_is_on guard and VBIF wiring")
