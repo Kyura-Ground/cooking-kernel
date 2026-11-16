@@ -242,3 +242,13 @@ with tempfile.TemporaryDirectory(prefix="kgsl-legacy-test-") as directory:
     subprocess.run(["gcc", "-std=gnu11", "-Wall", "-Wextra", "-Werror",
                     str(source), "-o", str(binary)], check=True)
     subprocess.run([str(binary)], check=True)
+
+# SDM660 keeps its fabrics under the downstream msm_bus driver, so the SCM PAS
+# bus vote must stay optional and the crypto PAS device must exist for any
+# qcom,pil-tz-generic node (kgsl-hyp included) to leave EPROBE_DEFER.
+pil_tz = (kernel / "drivers/soc/qcom/subsys-pil-tz.c").read_text()
+assert "IS_ERR_OR_NULL(scm_perf_client)" in pil_tz, "SCM PAS bus vote is mandatory"
+assert 'compatible = "qcom,pil-tz-scm-pas"' in (
+    kernel / "arch/arm64/boot/dts/vendor/qcom/sdm660.dtsi").read_text(), \
+    "pil-tz-scm-pas node missing"
+print("PASS: SCM PAS bus voting optional and pil-tz-scm-pas node present")
