@@ -26,6 +26,8 @@ It also loads unbound cgroup socket create/release programs to verify socket
 storage and cookie helper access. The probe raises only its own memlock limit.
 Load-only cgroup skb programs also check storage get/delete with the
 `sock_common` pointer returned by `skb->sk` after its required null check.
+Further load-only cgroup skb programs check TCP/UDP/common socket lookup,
+balanced release and rejection of an unreleased socket reference.
 
 `configs/verity.x509.pem` is the public AOSP development certificate from:
 https://android.googlesource.com/platform/build/+/android-10.0.0_r1/target/product/security/verity.x509.pem

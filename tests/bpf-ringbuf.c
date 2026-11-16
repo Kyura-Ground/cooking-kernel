@@ -92,6 +92,42 @@ static void run(struct bpf_insn *code, size_t count, unsigned int expected)
 	verifier_log[0] = 0;
 }
 
+static void cgroup_lookup(void)
+{
+	struct bpf_insn lookup[] = {
+		I(BPF_ST | BPF_DW | BPF_MEM, 10, 0, -16, 0),
+		I(BPF_ST | BPF_W | BPF_MEM, 10, 0, -8, 0),
+		COPY(2, 10), ADD(2, -16), MOV(3, 12), MOV(4, -1), MOV(5, 0),
+		CALL(BPF_FUNC_sk_lookup_tcp),
+		I(BPF_JMP | BPF_JEQ | BPF_K, 0, 0, 2, 0),
+		COPY(1, 0), CALL(BPF_FUNC_sk_release), MOV(0, 1), EXIT(),
+	};
+	enum bpf_func_id helpers[] = {
+		BPF_FUNC_sk_lookup_tcp, BPF_FUNC_sk_lookup_udp, BPF_FUNC_skc_lookup_tcp,
+	};
+	int fd, saved_errno;
+
+	for (size_t i = 0; i < COUNT(helpers); i++) {
+		lookup[7] = CALL(helpers[i]);
+		fd = load(lookup, COUNT(lookup), BPF_PROG_TYPE_CGROUP_SKB,
+			  BPF_CGROUP_INET_EGRESS);
+		require(fd >= 0, "load cgroup skb socket lookup/release program");
+		close(fd);
+	}
+	lookup[10] = MOV(0, 0);
+	fd = load(lookup, COUNT(lookup), BPF_PROG_TYPE_CGROUP_SKB,
+		  BPF_CGROUP_INET_EGRESS);
+	saved_errno = errno;
+	if (fd >= 0)
+		close(fd);
+	errno = saved_errno;
+	require(fd == -1 && (errno == EACCES || errno == EINVAL) &&
+		strstr(verifier_log, "Unreleased reference") != NULL,
+		"socket lookup reference must be released");
+	verifier_log[0] = 0;
+	puts("PASS: cgroup skb TCP/UDP/common lookup, release and reference tracking (load only)");
+}
+
 static void cgroup_socket(void)
 {
 	struct {
@@ -274,5 +310,6 @@ int main(void)
 	close(control);
 	puts("PASS: BPF ringbuf map, mmap, poll, five helpers, bounds and reference tracking");
 	cgroup_socket();
+	cgroup_lookup();
 	return 0;
 }
