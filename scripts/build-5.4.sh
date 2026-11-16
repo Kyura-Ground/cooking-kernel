@@ -33,6 +33,7 @@ git -C "$KERNEL_DIR" fetch --depth=1 --no-tags origin "$KERNEL_REVISION"
 git -C "$KERNEL_DIR" checkout --detach FETCH_HEAD
 git -C "$KERNEL_DIR" rev-parse HEAD | tee "$LOG_DIR/source-revision.txt"
 python3 "$ROOT/tests/kgsl-legacy-bus.py" "$KERNEL_DIR"
+python3 "$ROOT/tests/btpower-legacy.py" "$KERNEL_DIR"
 clang-14 --version | tee "$LOG_DIR/toolchain.txt"
 grep -Eq '^VERSION[[:space:]]*=[[:space:]]*5$' "$KERNEL_DIR/Makefile"
 grep -Eq '^PATCHLEVEL[[:space:]]*=[[:space:]]*4$' "$KERNEL_DIR/Makefile"
@@ -53,7 +54,8 @@ for option in ARCH_SDM660 QCOM_BUS_SCALING MSMB_CAMERA MSM_CAMERA_SENSOR \
     MSM_CPP MSM_CCI MSM_CSIPHY MSM_CSID MSMB_JPEG SND_SOC_SDM660 \
     SND_SOC_INT_CODEC SND_SOC_QDSP6V2 QCOM_SOUNDWIRE SND_SOC_QCOM_WCD9335 \
     MSM_ADSP_LOADER QPNP_SMB2 QPNP_FG_GEN3 MMC_CRYPTO \
-    REGULATOR_CPR3 REGULATOR_CPR4_MMSS_LDO REGULATOR_MSM_GFX_LDO; do
+    REGULATOR_CPR3 REGULATOR_CPR4_MMSS_LDO REGULATOR_MSM_GFX_LDO \
+    MSM_BT_POWER BTFM_SLIM; do
     grep -qx "CONFIG_$option=y" "$OUT_DIR/.config" || {
         printf 'Required X00TD driver was discarded by Kconfig: %s\n' "$option" >&2
         exit 1
