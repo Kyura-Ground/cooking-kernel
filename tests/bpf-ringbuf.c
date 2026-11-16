@@ -1,12 +1,14 @@
 #define _GNU_SOURCE
 #include <errno.h>
 #include <linux/bpf.h>
+#include <linux/btf.h>
 #include <poll.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/resource.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 
@@ -23,6 +25,7 @@
 _Static_assert(BPF_MAP_TYPE_RINGBUF == 27, "ringbuf map ABI");
 _Static_assert(BPF_FUNC_ringbuf_output == 130, "ringbuf helper ABI");
 _Static_assert(BPF_FUNC_ringbuf_query == 134, "ringbuf helper ABI");
+_Static_assert(BPF_CGROUP_INET_SOCK_RELEASE == 34, "socket release ABI");
 
 static char verifier_log[65536];
 
@@ -47,11 +50,12 @@ static int ring(unsigned int key, unsigned int size)
 	});
 }
 
-static int load(struct bpf_insn *code, size_t count)
+static int load(struct bpf_insn *code, size_t count, enum bpf_prog_type type,
+		enum bpf_attach_type attach)
 {
 	verifier_log[0] = 0;
 	return bpf(BPF_PROG_LOAD, &(union bpf_attr) {
-		.prog_type = BPF_PROG_TYPE_SOCKET_FILTER,
+		.prog_type = type, .expected_attach_type = attach,
 		.insn_cnt = count, .insns = (uintptr_t)code,
 		.license = (uintptr_t)"GPL", .log_level = 1,
 		.log_buf = (uintptr_t)verifier_log, .log_size = sizeof(verifier_log),
@@ -60,7 +64,7 @@ static int load(struct bpf_insn *code, size_t count)
 
 static void reject(struct bpf_insn *code, size_t count, const char *message)
 {
-	int fd = load(code, count);
+	int fd = load(code, count, BPF_PROG_TYPE_SOCKET_FILTER, 0);
 	int saved_errno = errno;
 
 	if (fd >= 0)
@@ -74,7 +78,7 @@ static void reject(struct bpf_insn *code, size_t count, const char *message)
 static void run(struct bpf_insn *code, size_t count, unsigned int expected)
 {
 	unsigned char packet[64] = { 0 };
-	int fd = load(code, count);
+	int fd = load(code, count, BPF_PROG_TYPE_SOCKET_FILTER, 0);
 	union bpf_attr attr = {
 		.test = { .prog_fd = fd, .data_size_in = sizeof(packet),
 			  .data_in = (uintptr_t)packet, .repeat = 1 },
@@ -87,6 +91,60 @@ static void run(struct bpf_insn *code, size_t count, unsigned int expected)
 	verifier_log[0] = 0;
 }
 
+static void cgroup_socket(void)
+{
+	struct {
+		struct btf_header header;
+		struct { struct btf_type type; uint32_t encoding; } integers[2];
+		char names[9];
+	} raw = {
+		.header = { .magic = BTF_MAGIC, .version = BTF_VERSION,
+			.hdr_len = sizeof(struct btf_header), .type_len = 32,
+			.str_off = 32, .str_len = 9 },
+		.integers = {
+			{ .type = { .name_off = 1, .info = BTF_KIND_INT << 24, .size = 4 },
+			  .encoding = 32 },
+			{ .type = { .name_off = 5, .info = BTF_KIND_INT << 24, .size = 8 },
+			  .encoding = 64 },
+		},
+		.names = "\0int\0u64",
+	};
+	int btf_fd = bpf(BPF_BTF_LOAD, &(union bpf_attr) {
+		.btf = (uintptr_t)&raw, .btf_size = sizeof(raw.header) + 32 + 9,
+	});
+	int fd, prog;
+
+	require(btf_fd >= 0, "socket storage BTF types");
+	fd = bpf(BPF_MAP_CREATE, &(union bpf_attr) {
+		.map_type = BPF_MAP_TYPE_SK_STORAGE, .key_size = 4, .value_size = 8,
+		.map_flags = BPF_F_NO_PREALLOC, .btf_fd = btf_fd,
+		.btf_key_type_id = 1, .btf_value_type_id = 2,
+	});
+	require(fd >= 0, "socket storage map");
+	struct bpf_insn storage[] = {
+		COPY(2, 1),
+		I(BPF_LD | BPF_DW | BPF_IMM, 1, BPF_PSEUDO_MAP_FD, 0, fd), I(0, 0, 0, 0, 0),
+		MOV(3, 0), MOV(4, BPF_SK_STORAGE_GET_F_CREATE), CALL(BPF_FUNC_sk_storage_get),
+		I(BPF_JMP | BPF_JEQ | BPF_K, 0, 0, 1, 0),
+		I(BPF_ST | BPF_DW | BPF_MEM, 0, 0, 0, 0x12345678), MOV(0, 1), EXIT(),
+	};
+	struct bpf_insn cookie[] = { CALL(BPF_FUNC_get_socket_cookie), MOV(0, 1), EXIT() };
+	enum bpf_attach_type hooks[] = { BPF_CGROUP_INET_SOCK_CREATE, BPF_CGROUP_INET_SOCK_RELEASE };
+
+	for (size_t i = 0; i < COUNT(hooks); i++) {
+		prog = load(storage, COUNT(storage), BPF_PROG_TYPE_CGROUP_SOCK, hooks[i]);
+		require(prog >= 0, "load cgroup socket storage context program");
+		close(prog);
+		prog = load(cookie, COUNT(cookie), BPF_PROG_TYPE_CGROUP_SOCK, hooks[i]);
+		require(prog >= 0, "load cgroup socket cookie program");
+		close(prog);
+	}
+	close(fd);
+	close(btf_fd);
+	verifier_log[0] = 0;
+	puts("PASS: cgroup socket create/release ABI, storage context and cookie helpers (load only)");
+}
+
 int main(void)
 {
 	const unsigned int size = 32768;
@@ -95,7 +153,9 @@ int main(void)
 	unsigned char *mapping, *data, *bad;
 	int fd, control, ret;
 	struct pollfd pollfd;
+	struct rlimit limit = { RLIM_INFINITY, RLIM_INFINITY };
 
+	require(setrlimit(RLIMIT_MEMLOCK, &limit) == 0, "probe process memlock limit");
 	require(page == 4096, "X00TD 4KiB page size");
 	control = bpf(BPF_MAP_CREATE, &(union bpf_attr) {
 		.map_type = BPF_MAP_TYPE_ARRAY, .key_size = 4,
@@ -196,5 +256,6 @@ int main(void)
 	close(fd);
 	close(control);
 	puts("PASS: BPF ringbuf map, mmap, poll, five helpers, bounds and reference tracking");
+	cgroup_socket();
 	return 0;
 }
