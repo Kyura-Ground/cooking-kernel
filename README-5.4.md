@@ -11,6 +11,12 @@ Artifacts include the image, X00TD DTB, compressed vmlinux, configuration,
 System.map, Module.symvers, module archive and SHA256 checksums. Logs and the
 resolved configuration are retained on failures.
 
+CI also builds `bpf-array-mmap-probe`, a static ARM compatibility executable.
+Run it as root in recovery to check array-map mmap support, page offsets,
+read-only permissions, freezing and writer-counter cleanup. It creates only
+anonymous maps and attaches nothing to networking. It is retained as a separate
+CircleCI artifact with a SHA256 checksum and is not installed by the kernel ZIP.
+
 `configs/verity.x509.pem` is the public AOSP development certificate from:
 https://android.googlesource.com/platform/build/+/android-10.0.0_r1/target/product/security/verity.x509.pem
 

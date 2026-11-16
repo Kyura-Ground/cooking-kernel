@@ -25,7 +25,7 @@ jobs:
             DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
               ca-certificates git openssh-client bc bison build-essential flex \
               libssl-dev libelf-dev clang-14 llvm-14 lld-14 \
-              binutils-aarch64-linux-gnu gcc-arm-linux-gnueabi \
+              binutils-aarch64-linux-gnu gcc-arm-linux-gnueabi libc6-dev-armel-cross \
               ccache python3 curl cpio gzip tar zip unzip shellcheck openjdk-17-jre-headless
       - checkout
       - run:

@@ -22,6 +22,9 @@ finish() {
 }
 trap finish EXIT
 
+arm-linux-gnueabi-gcc -static -O2 -Wall -Wextra -Werror \
+    "$ROOT/tests/bpf-array-mmap.c" -o "$ARTIFACT_DIR/bpf-array-mmap-probe"
+
 git init -q "$KERNEL_DIR"
 git -C "$KERNEL_DIR" remote add origin https://github.com/Kyura-Ground/android_kernel_asus_sdm660-5.4.git
 git -C "$KERNEL_DIR" fetch --depth=1 --no-tags origin "$KERNEL_REVISION"
@@ -75,7 +78,8 @@ gzip -c "$OUT_DIR/vmlinux" > "$ARTIFACT_DIR/vmlinux.gz"
 )
 (
     cd "$ARTIFACT_DIR"
-    sha256sum Image.gz-dtb sdm636-qrd-X00TD.dtb vmlinux.gz modules.tar.gz > SHA256SUMS
+    sha256sum Image.gz-dtb sdm636-qrd-X00TD.dtb vmlinux.gz modules.tar.gz \
+        bpf-array-mmap-probe > SHA256SUMS
 )
 bash "$ROOT/scripts/prepare-installer-5.4.sh" "$ROOT/installer-tools-54"
 bash "$ROOT/scripts/package-5.4.sh" "$ARTIFACT_DIR" "$LOG_DIR" "$ROOT/installer-tools-54"
