@@ -67,8 +67,9 @@ in the CircleCI artifacts outside the ZIP to keep the Telegram upload small.
 Set the existing CircleCI project environment variables `TG_BOT_TOKEN` and
 `TG_CHAT_ID`, as on `lineage-23.2`, to upload the **recovery installer ZIP** using Telegram
 `sendDocument`. The caption includes the full kernel commit and ZIP SHA256.
-Missing credentials skip the upload; an upload error leaves the build artifacts
-available in CircleCI. Tokens and API responses are not printed to build logs.
+Set `PIXELDRAIN_API_KEY`, as on `lineage-23.2`, to upload the recovery installer ZIP
+to Pixeldrain. Missing credentials skip the upload; an upload error leaves the build
+artifacts available in CircleCI. Tokens, keys and API responses are not printed to build logs.
 
 The raw build archive is for inspection and is not flashable. The workflow
 checks compilation, package structure, failure handling and installer control

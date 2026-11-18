@@ -57,29 +57,31 @@ unzip -tq "$ZIP_PATH"
 sha256sum "$ZIP_PATH" >> "$ARTIFACT_DIR/SHA256SUMS"
 printf 'Packaged recovery installer %s\n' "$ZIP_NAME"
 
-if [[ -z ${TG_BOT_TOKEN:-} || -z ${TG_CHAT_ID:-} ]]; then
-    printf 'Telegram credentials not set, skipping upload.\n'
-    exit 0
-fi
-if (( $(stat -c %s "$ZIP_PATH") > 50000000 )); then
-    printf 'ZIP exceeds Telegram bot upload limit; CircleCI artifacts are retained.\n'
-    exit 0
-fi
+send_telegram() {
+    if [[ -z ${TG_BOT_TOKEN:-} || -z ${TG_CHAT_ID:-} ]]; then
+        printf 'Telegram credentials not set, skipping upload.\n'
+        return 0
+    fi
+    if (( $(stat -c %s "$ZIP_PATH") > 50000000 )); then
+        printf 'ZIP exceeds Telegram bot upload limit; CircleCI artifacts are retained.\n'
+        return 0
+    fi
 
-ZIP_SHA=$(sha256sum "$ZIP_PATH" | cut -d' ' -f1)
-CAPTION="X00TD Linux 5.4 recovery installer (boot + recovery)
+    local zip_sha
+    zip_sha=$(sha256sum "$ZIP_PATH" | cut -d' ' -f1)
+    local caption="X00TD Linux 5.4 recovery installer (boot + recovery)
 Kernel commit: $KERNEL_SHA
 Installer commit: $ANYKERNEL_SHA
-SHA256: $ZIP_SHA"
-RESPONSE="$PACKAGE_TMP/telegram-response.json"
-printf 'Uploading ZIP to Telegram\n'
-if curl --silent --fail --max-time 300 \
-    --output "$RESPONSE" \
-    --form-string "chat_id=$TG_CHAT_ID" \
-    --form "document=@$ZIP_PATH" \
-    --form-string "caption=$CAPTION" \
-    "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" 2>/dev/null &&
-    python3 - "$RESPONSE" <<'PY'
+SHA256: $zip_sha"
+    local response="$PACKAGE_TMP/telegram-response.json"
+    printf 'Uploading ZIP to Telegram\n'
+    if curl --silent --fail --max-time 300 \
+        --output "$response" \
+        --form-string "chat_id=$TG_CHAT_ID" \
+        --form "document=@$ZIP_PATH" \
+        --form-string "caption=$caption" \
+        "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" 2>/dev/null &&
+        python3 - "$response" <<'PY'
 import json
 import sys
 
@@ -90,8 +92,31 @@ except (OSError, ValueError):
     sys.exit(1)
 sys.exit(0 if isinstance(result, dict) and result.get("ok") is True else 1)
 PY
-then
-    printf 'Telegram upload ok\n'
-else
-    printf 'Telegram upload failed; CircleCI artifacts are retained.\n'
-fi
+    then
+        printf 'Telegram upload ok\n'
+    else
+        printf 'Telegram upload failed; CircleCI artifacts are retained.\n'
+    fi
+}
+
+send_pixeldrain() {
+    if [[ ! -f "$ZIP_PATH" ]]; then
+        printf 'Pixeldrain upload skipped: ZIP not found at %s\n' "$ZIP_PATH"
+        return 0
+    fi
+
+    if [[ -z ${PIXELDRAIN_API_KEY:-} ]]; then
+        printf 'Pixeldrain API key not set, skipping fallback.\n'
+        return 0
+    fi
+
+    printf 'Uploading to Pixeldrain\n'
+    if curl -sS --max-time 300 -T "$ZIP_PATH" -u :"$PIXELDRAIN_API_KEY" https://pixeldrain.com/api/file/ 2>/dev/null; then
+        printf '\n'
+    else
+        printf 'Pixeldrain upload failed; CircleCI artifacts are retained.\n'
+    fi
+}
+
+send_telegram
+send_pixeldrain

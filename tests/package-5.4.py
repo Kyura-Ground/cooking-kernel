@@ -28,18 +28,30 @@ with tempfile.TemporaryDirectory(prefix="kernel54-package-") as directory:
     curl.write_text('''#!/usr/bin/env python3
 import json, os, pathlib, sys
 args = sys.argv[1:]
-assert args[-1] == 'https://api.telegram.org/bottest-only-token/sendDocument'
-forms = [args[i+1] for i, arg in enumerate(args) if arg == '--form-string']
-assert 'chat_id=@test_channel' in forms
-document = args[args.index('--form')+1]
-assert document.startswith('document=@') and pathlib.Path(document[10:]).is_file()
-pathlib.Path(os.environ['CURL_CALL']).write_text(json.dumps(args))
-mode = os.environ['CURL_MODE']
-if mode == 'transport':
-    print('do not leak test-only-token', file=sys.stderr)
-    sys.exit(22)
-body = '{invalid' if mode == 'invalid' else json.dumps({'ok': mode == 'ok'})
-pathlib.Path(args[args.index('--output')+1]).write_text(body)
+if args[-1] == 'https://api.telegram.org/bottest-only-token/sendDocument':
+    forms = [args[i+1] for i, arg in enumerate(args) if arg == '--form-string']
+    assert 'chat_id=@test_channel' in forms
+    document = args[args.index('--form')+1]
+    assert document.startswith('document=@') and pathlib.Path(document[10:]).is_file()
+    pathlib.Path(os.environ['CURL_CALL']).write_text(json.dumps(args))
+    mode = os.environ['CURL_MODE']
+    if mode == 'transport':
+        print('do not leak test-only-token', file=sys.stderr)
+        sys.exit(22)
+    body = '{invalid' if mode == 'invalid' else json.dumps({'ok': mode == 'ok'})
+    pathlib.Path(args[args.index('--output')+1]).write_text(body)
+elif args[-1] == 'https://pixeldrain.com/api/file/':
+    assert '-u' in args and args[args.index('-u')+1] == ':test-only-key'
+    assert '-T' in args and pathlib.Path(args[args.index('-T')+1]).is_file()
+    if 'PIXELDRAIN_CALL' in os.environ:
+        pathlib.Path(os.environ['PIXELDRAIN_CALL']).write_text(json.dumps(args))
+    mode = os.environ.get('PIXELDRAIN_MODE', 'ok')
+    if mode == 'transport':
+        print('do not leak test-only-key', file=sys.stderr)
+        sys.exit(22)
+    print(json.dumps({'id': 'abcdef', 'success': True}))
+else:
+    raise AssertionError(f'Unexpected curl target: {args[-1]}')
 ''')
     curl.chmod(0o755)
     java = mockbin / "java"
@@ -60,8 +72,8 @@ shutil.copyfile(sys.argv[3], sys.argv[4])
         path.write_text("AnyKernel fixture: " + filename)
     (tools / "zipsigner.jar").write_bytes(b"signer fixture")
 
-    def run(name, mode=None, missing_image=False, bad_revision=False, stale_zip=False,
-            signer_failure=False, bad_installer_revision=False):
+    def run(name, mode=None, pixeldrain_mode=None, missing_image=False, bad_revision=False,
+            stale_zip=False, signer_failure=False, bad_installer_revision=False):
         case = tmp / name
         artifacts, logs = case / "artifacts with spaces", case / "logs"
         artifacts.mkdir(parents=True)
@@ -83,10 +95,14 @@ shutil.copyfile(sys.argv[3], sys.argv[4])
             with zipfile.ZipFile(archive, "w") as zipped:
                 zipped.writestr("stale.txt", "must not survive")
         call = case / "curl.json"
+        pd_call = case / "pixeldrain.json"
         env = dict(PATH=str(mockbin) + os.pathsep + os.environ["PATH"],
-                   HOME=str(tmp), CURL_CALL=str(call), CURL_MODE=mode or "ok")
+                   HOME=str(tmp), CURL_CALL=str(call), CURL_MODE=mode or "ok",
+                   PIXELDRAIN_CALL=str(pd_call))
         if mode:
             env.update(TG_BOT_TOKEN="test-only-token", TG_CHAT_ID="@test_channel")
+        if pixeldrain_mode:
+            env.update(PIXELDRAIN_API_KEY="test-only-key", PIXELDRAIN_MODE=pixeldrain_mode)
         if signer_failure:
             env["SIGNER_FAIL"] = "1"
         result = subprocess.run(
@@ -94,12 +110,13 @@ shutil.copyfile(sys.argv[3], sys.argv[4])
             env=env, capture_output=True, text=True)
         output = result.stdout + result.stderr
         assert "test-only-token" not in output, output
+        assert "test-only-key" not in output, output
         assert (result.returncode == 0) == (not missing_image and not bad_revision
                                          and not signer_failure and not bad_installer_revision), output
         if missing_image or bad_revision or bad_installer_revision:
-            assert not archive.exists() and not call.exists()
+            assert not archive.exists() and not call.exists() and not pd_call.exists()
         elif signer_failure:
-            assert archive.exists() and not installer.exists() and not call.exists()
+            assert archive.exists() and not installer.exists() and not call.exists() and not pd_call.exists()
         else:
             with zipfile.ZipFile(archive) as zipped:
                 assert set(zipped.namelist()) == set(PAYLOAD) | {
@@ -137,6 +154,17 @@ shutil.copyfile(sys.argv[3], sys.argv[4])
                     assert "Telegram upload failed" in output, output
             else:
                 assert "credentials not set" in output
+
+            assert pd_call.exists() == bool(pixeldrain_mode)
+            if pixeldrain_mode:
+                args = json.loads(pd_call.read_text())
+                assert any(str(installer) in arg for arg in args)
+                if pixeldrain_mode == "ok":
+                    assert "Pixeldrain upload failed" not in output, output
+                else:
+                    assert "Pixeldrain upload failed" in output, output
+            else:
+                assert "Pixeldrain API key not set" in output
         print(name + ": PASS")
 
     run("credentials-missing")
@@ -144,6 +172,9 @@ shutil.copyfile(sys.argv[3], sys.argv[4])
     run("telegram-api-error", "error")
     run("telegram-invalid-json", "invalid")
     run("telegram-transport-error", "transport")
+    run("pixeldrain-ok", pixeldrain_mode="ok")
+    run("pixeldrain-transport-error", pixeldrain_mode="transport")
+    run("telegram-and-pixeldrain", mode="ok", pixeldrain_mode="ok")
     run("missing-kernel", missing_image=True)
     run("invalid-revision", bad_revision=True)
     run("replace-stale-zip", stale_zip=True)
