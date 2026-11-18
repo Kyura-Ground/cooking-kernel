@@ -32,6 +32,9 @@ git -C "$KERNEL_DIR" remote add origin https://github.com/Kyura-Ground/android_k
 git -C "$KERNEL_DIR" fetch --depth=1 --no-tags origin "$KERNEL_REVISION"
 git -C "$KERNEL_DIR" checkout --detach FETCH_HEAD
 git -C "$KERNEL_DIR" rev-parse HEAD | tee "$LOG_DIR/source-revision.txt"
+arm-linux-gnueabi-gcc -std=gnu11 -Wall -Wextra -Werror \
+    -I"$KERNEL_DIR/include/uapi" -c "$ROOT/tests/camera-sensor-abi.c" \
+    -o "$LOG_DIR/camera-sensor-abi.o"
 python3 "$ROOT/tests/kgsl-legacy-bus.py" "$KERNEL_DIR"
 python3 "$ROOT/tests/btpower-legacy.py" "$KERNEL_DIR"
 python3 "$ROOT/tests/wlan-vendor-policy.py" "$KERNEL_DIR"
