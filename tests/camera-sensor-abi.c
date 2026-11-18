@@ -1,7 +1,7 @@
 /* Match the 32-bit X00TD sensor probe payload captured from the vendor HAL. */
 #include <stddef.h>
 #include <stdint.h>
-#include <media/msm_camsensor_sdk.h>
+#include <msm_camsensor_sdk.h>
 
 _Static_assert(sizeof(void *) == 4, "compile this ABI check for ARM32");
 _Static_assert(sizeof(struct msm_sensor_id_info_t) == 6,
