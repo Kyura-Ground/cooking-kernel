@@ -53,8 +53,7 @@ if [[ "$BUILD_KSU" -eq 1 ]]; then
     printf 'Setting up KernelSU...\n'
     (
         cd "$KERNEL_DIR"
-        curl --fail --silent --show-error --location --retry 3 \
-            "https://raw.githubusercontent.com/backslashxx/KernelSU/master/kernel/setup.sh" | bash -s master
+        curl -LSs "https://raw.githubusercontent.com/backslashxx/KernelSU/master/kernel/setup.sh" | bash -s master
     )
     if [[ -d "$KERNEL_DIR/KernelSU" ]]; then
         git -C "$KERNEL_DIR/KernelSU" rev-parse HEAD | tee "$LOG_DIR/ksu-revision.txt"
