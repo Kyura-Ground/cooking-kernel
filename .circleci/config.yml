@@ -4,6 +4,9 @@ parameters:
   kernel-revision:
     type: string
     default: lineage-24.0
+  build-ksu:
+    type: boolean
+    default: true
 
 jobs:
   build:
@@ -13,6 +16,7 @@ jobs:
     working_directory: ~/project
     environment:
       KERNEL_REVISION: << pipeline.parameters.kernel-revision >>
+      BUILD_KSU: << pipeline.parameters.build-ksu >>
       CCACHE_DIR: /root/project/.ccache-54
       KBUILD_BUILD_USER: Kyura
       KBUILD_BUILD_HOST: circleci

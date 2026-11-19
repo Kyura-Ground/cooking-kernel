@@ -5,8 +5,11 @@ through `.circleci/config.yml` and `scripts/build-5.4.sh`. The 4.4 builder
 remains on `lineage-23.2`; its `build.sh` is not invoked by this workflow.
 
 Trigger this branch with `kernel-revision` set to the full kernel commit SHA.
+Optional parameter `build-ksu` (boolean, defaults to `true`) integrates KernelSU
+via `KernelSU/kernel/setup.sh` and merges `vendor/extra/ksu.config`.
 The job records that SHA, uses Ubuntu 22.04 Clang/LLVM 14, and builds the
-unmodified `vendor/asus/X00TD_defconfig` with LTO, Image.gz-dtb and modules.
+`vendor/asus/X00TD_defconfig` (with `vendor/extra/ksu.config` when `build-ksu` is enabled)
+with LTO, Image.gz-dtb and modules.
 Artifacts include the image, X00TD DTB, compressed vmlinux, configuration,
 System.map, Module.symvers, module archive and SHA256 checksums. Logs and the
 resolved configuration are retained on failures.

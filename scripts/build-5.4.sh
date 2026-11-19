@@ -7,6 +7,12 @@ OUT_DIR="$KERNEL_DIR/out"
 LOG_DIR="$ROOT/logs-54"
 ARTIFACT_DIR="$ROOT/artifacts-54"
 KERNEL_REVISION=${KERNEL_REVISION:-lineage-24.0}
+BUILD_KSU=${BUILD_KSU:-1}
+if [[ "$BUILD_KSU" == "true" || "$BUILD_KSU" == "1" ]]; then
+    BUILD_KSU=1
+else
+    BUILD_KSU=0
+fi
 export PATH="/usr/lib/llvm-14/bin:$PATH"
 mkdir -p "$LOG_DIR" "$ARTIFACT_DIR"
 exec > >(tee "$LOG_DIR/build.log") 2>&1
@@ -43,6 +49,18 @@ grep -Eq '^VERSION[[:space:]]*=[[:space:]]*5$' "$KERNEL_DIR/Makefile"
 grep -Eq '^PATCHLEVEL[[:space:]]*=[[:space:]]*4$' "$KERNEL_DIR/Makefile"
 ccache --max-size 3G
 
+if [[ "$BUILD_KSU" -eq 1 ]]; then
+    printf 'Setting up KernelSU...\n'
+    (
+        cd "$KERNEL_DIR"
+        curl --fail --silent --show-error --location --retry 3 \
+            "https://raw.githubusercontent.com/backslashxx/KernelSU/master/kernel/setup.sh" | bash -s master
+    )
+    if [[ -d "$KERNEL_DIR/KernelSU" ]]; then
+        git -C "$KERNEL_DIR/KernelSU" rev-parse HEAD | tee "$LOG_DIR/ksu-revision.txt"
+    fi
+fi
+
 MAKE_ARGS=(
     -C "$KERNEL_DIR" O="$OUT_DIR" ARCH=arm64
     'CC=ccache clang-14' HOSTCC=gcc HOSTCXX=g++
@@ -53,7 +71,11 @@ MAKE_ARGS=(
     CLANG_TRIPLE=aarch64-linux-gnu- LLVM_IAS=1
 )
 
-make "${MAKE_ARGS[@]}" vendor/asus/X00TD_defconfig
+if [[ "$BUILD_KSU" -eq 1 ]]; then
+    make "${MAKE_ARGS[@]}" vendor/asus/X00TD_defconfig vendor/extra/ksu.config
+else
+    make "${MAKE_ARGS[@]}" vendor/asus/X00TD_defconfig
+fi
 for option in ARCH_SDM660 QCOM_BUS_SCALING MSMB_CAMERA MSM_CAMERA_SENSOR \
     MSM_CPP MSM_CCI MSM_CSIPHY MSM_CSID MSMB_JPEG SND_SOC_SDM660 \
     SND_SOC_INT_CODEC SND_SOC_QDSP6V2 QCOM_SOUNDWIRE SND_SOC_QCOM_WCD9335 \
@@ -65,6 +87,14 @@ for option in ARCH_SDM660 QCOM_BUS_SCALING MSMB_CAMERA MSM_CAMERA_SENSOR \
         exit 1
     }
 done
+if [[ "$BUILD_KSU" -eq 1 ]]; then
+    for option in KSU KSU_TAMPER_SYSCALL_TABLE; do
+        grep -qx "CONFIG_$option=y" "$OUT_DIR/.config" || {
+            printf 'Required KernelSU option was discarded by Kconfig: CONFIG_%s\n' "$option" >&2
+            exit 1
+        }
+    done
+fi
 for option in SOUNDWIRE SND_SOC_WCD9335; do
     if grep -qx "CONFIG_$option=y" "$OUT_DIR/.config"; then
         printf 'Conflicting upstream/vendor provider selected: %s\n' "$option" >&2
