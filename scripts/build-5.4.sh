@@ -52,6 +52,8 @@ python3 "$ROOT/tests/camera-smmu-ready.py" "$KERNEL_DIR"
 python3 "$ROOT/tests/venus-early-init.py" "$KERNEL_DIR"
 python3 "$ROOT/tests/lpm-compat.py" "$KERNEL_DIR"
 python3 "$ROOT/tests/apcs-sdm660.py" "$KERNEL_DIR"
+python3 "$ROOT/tests/pinctrl-sdm660.py" "$KERNEL_DIR"
+python3 "$ROOT/tests/gpio-reserved-mask.py" "$KERNEL_DIR"
 clang-14 --version | tee "$LOG_DIR/toolchain.txt"
 grep -Eq '^VERSION[[:space:]]*=[[:space:]]*5$' "$KERNEL_DIR/Makefile"
 grep -Eq '^PATCHLEVEL[[:space:]]*=[[:space:]]*4$' "$KERNEL_DIR/Makefile"
@@ -83,7 +85,7 @@ if [[ "$BUILD_KSU" -eq 1 ]]; then
 else
     make "${MAKE_ARGS[@]}" vendor/asus/X00TD_defconfig
 fi
-for option in ARCH_SDM660 QCOM_MPM QCOM_APCS_IPC \
+for option in ARCH_SDM660 PINCTRL_SDM660 QCOM_MPM QCOM_APCS_IPC \
     QCOM_BUS_SCALING MSMB_CAMERA MSM_CAMERA_SENSOR \
     MSM_CPP MSM_CCI MSM_CSIPHY MSM_CSID MSMB_JPEG SND_SOC_SDM660 \
     SND_SOC_INT_CODEC SND_SOC_QDSP6V2 QCOM_SOUNDWIRE SND_SOC_QCOM_WCD9335 \
