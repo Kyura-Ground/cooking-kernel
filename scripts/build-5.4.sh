@@ -44,6 +44,14 @@ arm-linux-gnueabi-gcc -std=gnu11 -Wall -Wextra -Werror \
 python3 "$ROOT/tests/kgsl-legacy-bus.py" "$KERNEL_DIR"
 python3 "$ROOT/tests/btpower-legacy.py" "$KERNEL_DIR"
 python3 "$ROOT/tests/wlan-vendor-policy.py" "$KERNEL_DIR"
+python3 "$ROOT/tests/soundwire-legacy.py" "$KERNEL_DIR"
+python3 "$ROOT/tests/mpm-legacy.py" "$KERNEL_DIR"
+python3 "$ROOT/tests/camera-lifecycle.py" "$KERNEL_DIR"
+python3 "$ROOT/tests/probe-deferral.py" "$KERNEL_DIR"
+python3 "$ROOT/tests/camera-smmu-ready.py" "$KERNEL_DIR"
+python3 "$ROOT/tests/venus-early-init.py" "$KERNEL_DIR"
+python3 "$ROOT/tests/lpm-compat.py" "$KERNEL_DIR"
+python3 "$ROOT/tests/apcs-sdm660.py" "$KERNEL_DIR"
 clang-14 --version | tee "$LOG_DIR/toolchain.txt"
 grep -Eq '^VERSION[[:space:]]*=[[:space:]]*5$' "$KERNEL_DIR/Makefile"
 grep -Eq '^PATCHLEVEL[[:space:]]*=[[:space:]]*4$' "$KERNEL_DIR/Makefile"
@@ -75,7 +83,8 @@ if [[ "$BUILD_KSU" -eq 1 ]]; then
 else
     make "${MAKE_ARGS[@]}" vendor/asus/X00TD_defconfig
 fi
-for option in ARCH_SDM660 QCOM_BUS_SCALING MSMB_CAMERA MSM_CAMERA_SENSOR \
+for option in ARCH_SDM660 QCOM_MPM QCOM_APCS_IPC \
+    QCOM_BUS_SCALING MSMB_CAMERA MSM_CAMERA_SENSOR \
     MSM_CPP MSM_CCI MSM_CSIPHY MSM_CSID MSMB_JPEG SND_SOC_SDM660 \
     SND_SOC_INT_CODEC SND_SOC_QDSP6V2 QCOM_SOUNDWIRE SND_SOC_QCOM_WCD9335 \
     MSM_ADSP_LOADER QPNP_SMB2 QPNP_FG_GEN3 MMC_CRYPTO \
