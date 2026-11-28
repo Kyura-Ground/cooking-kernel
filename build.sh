@@ -219,7 +219,7 @@ fi
 
 if [ "${BUILD_KSU}" -eq 1 ]; then
     info "Setting up KernelSU"
-    curl -LSs "https://raw.githubusercontent.com/Baka-SU/BakaSU/main/kernel/setup.sh" | bash -s main || error "KernelSU setup failed"
+    curl -LSs "https://raw.githubusercontent.com/Kyura-Ground/BakaSU/main/kernel/setup.sh" | bash -s main || error "KernelSU setup failed"
 else
     info "KernelSU disabled"
 fi
