@@ -300,6 +300,8 @@ elif [ "${LTO}" -eq 2 ]; then
     scripts/config --file out/.config -e LTO_CLANG -d THINLTO
 fi
 
+make "${MAKE_ARGS[@]}" olddefconfig 2>&1 | tee -a "${BUILD_LOG}" || error "Config resolution failed"
+
 info "Starting compilation..."
 make -j"${JOBS}" "${MAKE_ARGS[@]}" 2>&1 | tee -a "${BUILD_LOG}" || error "Compilation failed"
 
